@@ -22,26 +22,46 @@ logger = logging.getLogger(__name__)
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 TIER1_DOMAINS = {
-    "openai.com", "blog.openai.com",
-    "anthropic.com", "www.anthropic.com",
-    "ai.google", "blog.google", "deepmind.google",
-    "ai.meta.com", "engineering.fb.com",
-    "microsoft.com", "blogs.microsoft.com", "azure.microsoft.com",
-    "stability.ai", "mistral.ai", "cohere.com",
-    "nvidia.com", "developer.nvidia.com",
+    "openai.com",
+    "blog.openai.com",
+    "anthropic.com",
+    "www.anthropic.com",
+    "ai.google",
+    "blog.google",
+    "deepmind.google",
+    "ai.meta.com",
+    "engineering.fb.com",
+    "microsoft.com",
+    "blogs.microsoft.com",
+    "azure.microsoft.com",
+    "stability.ai",
+    "mistral.ai",
+    "cohere.com",
+    "nvidia.com",
+    "developer.nvidia.com",
     "together.ai",
 }
 TIER2_DOMAINS = {
-    "huggingface.co", "hf.co",
-    "arxiv.org", "export.arxiv.org",
+    "huggingface.co",
+    "hf.co",
+    "arxiv.org",
+    "export.arxiv.org",
     "developers.googleblog.com",
-    "aws.amazon.com", "cloud.google.com",
+    "aws.amazon.com",
+    "cloud.google.com",
 }
 TIER3_DOMAINS = {
-    "techcrunch.com", "theverge.com", "venturebeat.com",
-    "wired.com", "arstechnica.com", "thenewstack.io",
-    "infoworld.com", "zdnet.com", "reuters.com",
-    "github.com", "github.blog",
+    "techcrunch.com",
+    "theverge.com",
+    "venturebeat.com",
+    "wired.com",
+    "arstechnica.com",
+    "thenewstack.io",
+    "infoworld.com",
+    "zdnet.com",
+    "reuters.com",
+    "github.com",
+    "github.blog",
 }
 
 _SIGNAL_WEIGHTS = {
@@ -54,11 +74,13 @@ _SIGNAL_WEIGHTS = {
 
 class ProviderError(Exception):
     """Non-retryable error from an LLM provider (auth, bad request, etc.)."""
+
     pass
 
 
 class RateLimitError(Exception):
     """Raised when an LLM provider returns 429 Too Many Requests."""
+
     pass
 
 
@@ -98,13 +120,24 @@ def _content_specificity_score(text: str) -> float:
         return 0.15
     lower = text[:8000].lower()
     score = 0.15
-    if re.search(r"\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}", lower) or re.search(r"\b20\d{2}[-/]\d{2}", lower):
+    if re.search(
+        r"\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}",
+        lower,
+    ) or re.search(r"\b20\d{2}[-/]\d{2}", lower):
         score += 0.18
-    if re.search(r"\bv\d+\.\d+|version\s+\d|gpt-\d|claude[\s-]\d|gemini[\s-]\d|llama[\s-]\d", lower):
+    if re.search(
+        r"\bv\d+\.\d+|version\s+\d|gpt-\d|claude[\s-]\d|gemini[\s-]\d|llama[\s-]\d",
+        lower,
+    ):
         score += 0.18
-    if re.search(r"\d+\.?\d*\s*%|\b\d{2,}\s*(tokens?|params?|parameters|b\b|m\b|k\b)", lower):
+    if re.search(
+        r"\d+\.?\d*\s*%|\b\d{2,}\s*(tokens?|params?|parameters|b\b|m\b|k\b)", lower
+    ):
         score += 0.20
-    if re.search(r"\b(benchmark|accuracy|f1|bleu|rouge|mmlu|hellaswag|humaneval|gsm8k|math-500|gpqa)\b", lower):
+    if re.search(
+        r"\b(benchmark|accuracy|f1|bleu|rouge|mmlu|hellaswag|humaneval|gsm8k|math-500|gpqa)\b",
+        lower,
+    ):
         score += 0.15
     if re.search(r"https?://\S{15,}", lower):
         score += 0.07
@@ -148,7 +181,13 @@ def compute_confidence(
 
     logger.debug(
         "Confidence breakdown — tier=%.2f content=%.2f llm=%.2f evidence=%.2f → raw=%.3f final=%.2f | %s",
-        s_tier, s_content, s_llm, s_evidence, raw, final, source_url[:60],
+        s_tier,
+        s_content,
+        s_llm,
+        s_evidence,
+        raw,
+        final,
+        source_url[:60],
     )
     return final
 
@@ -243,6 +282,7 @@ class SummarizerService:
             return None
         try:
             from anthropic import AsyncAnthropic
+
             return AsyncAnthropic(api_key=self.settings.anthropic_api_key.strip())
         except Exception as e:
             logger.warning("Anthropic client init failed: %s", e)
@@ -254,6 +294,7 @@ class SummarizerService:
             return None
         try:
             from openai import AsyncOpenAI
+
             return AsyncOpenAI(base_url="https://api.x.ai/v1", api_key=key.strip())
         except Exception as e:
             logger.warning("Grok client init failed: %s", e)
@@ -261,9 +302,13 @@ class SummarizerService:
 
     def _available_providers(self) -> list:
         order = (
-            getattr(self.settings, "llm_provider_order", None)
-            or "openai,claude,grok,gemini"
-        ).strip().lower()
+            (
+                getattr(self.settings, "llm_provider_order", None)
+                or "openai,claude,grok,gemini"
+            )
+            .strip()
+            .lower()
+        )
         wanted = [p.strip() for p in order.split(",") if p.strip()]
         out = []
         for p in wanted:
@@ -271,7 +316,10 @@ class SummarizerService:
                 out.append("openai")
             elif p == "claude" and (self.settings.anthropic_api_key or "").strip():
                 out.append("claude")
-            elif p == "grok" and (getattr(self.settings, "grok_api_key", None) or "").strip():
+            elif (
+                p == "grok"
+                and (getattr(self.settings, "grok_api_key", None) or "").strip()
+            ):
                 out.append("grok")
             elif p == "gemini" and (self.settings.gemini_api_key or "").strip():
                 out.append("gemini")
@@ -299,7 +347,11 @@ class SummarizerService:
         hints = hints or {}
         max_entries = getattr(self.settings, "summary_cache_max_entries", 500)
 
-        cache_key = get_cache_key(source_url, content_hash, "") if content_hash else get_cache_key(source_url, None, (text or "")[:500])
+        cache_key = (
+            get_cache_key(source_url, content_hash, "")
+            if content_hash
+            else get_cache_key(source_url, None, (text or "")[:500])
+        )
         cached = get_cached(cache_key) if cache_key else None
         if cached:
             return _normalize_types(cached)
@@ -314,11 +366,15 @@ class SummarizerService:
             try:
                 await self._global_throttle()
                 logger.debug("Trying LLM provider: %s", provider)
-                out = await self._call_provider(provider, title, text, source_url, category, hints)
+                out = await self._call_provider(
+                    provider, title, text, source_url, category, hints
+                )
                 out = self._post_process(out, source_url, text)
                 if max_entries and cache_key:
                     set_cached(cache_key, out, max_entries=max_entries)
-                logger.debug("LLM provider %s succeeded for %s", provider, source_url[:80])
+                logger.debug(
+                    "LLM provider %s succeeded for %s", provider, source_url[:80]
+                )
                 return out
             except RateLimitError as e:
                 logger.info("Provider %s rate limited, trying next: %s", provider, e)
@@ -329,23 +385,39 @@ class SummarizerService:
                 last_error = e
                 continue
 
-        logger.warning("All LLM providers failed. Last error: %s. Using fallback.", last_error)
+        logger.warning(
+            "All LLM providers failed. Last error: %s. Using fallback.", last_error
+        )
         return self._summarize_fallback(title, text, source_url, category)
 
     async def _call_provider(
-        self, provider: str, title: str, text: str, source_url: str, category: str, hints: Dict[str, Any]
+        self,
+        provider: str,
+        title: str,
+        text: str,
+        source_url: str,
+        category: str,
+        hints: Dict[str, Any],
     ) -> Dict[str, Any]:
         if provider == "openai":
-            return await self._summarize_openai(title, text, source_url, category, hints)
+            return await self._summarize_openai(
+                title, text, source_url, category, hints
+            )
         elif provider == "claude":
-            return await self._summarize_claude(title, text, source_url, category, hints)
+            return await self._summarize_claude(
+                title, text, source_url, category, hints
+            )
         elif provider == "grok":
             return await self._summarize_grok(title, text, source_url, category, hints)
         elif provider == "gemini":
-            return await self._summarize_gemini(title, text, source_url, category, hints)
+            return await self._summarize_gemini(
+                title, text, source_url, category, hints
+            )
         raise ProviderError(f"Unknown provider: {provider}")
 
-    def _post_process(self, out: Dict[str, Any], source_url: str, text: str) -> Dict[str, Any]:
+    def _post_process(
+        self, out: Dict[str, Any], source_url: str, text: str
+    ) -> Dict[str, Any]:
         """Compute multi-signal confidence and validate evidence."""
         evidence = out.get("evidence", "")
         if not evidence or evidence == "Not stated" or len(evidence.strip()) < 10:
@@ -353,7 +425,10 @@ class SummarizerService:
         elif text:
             normalized_text = " ".join(text.split()).lower()
             normalized_evidence = " ".join(evidence.split()).lower()
-            if len(normalized_evidence) > 20 and normalized_evidence[:40] not in normalized_text:
+            if (
+                len(normalized_evidence) > 20
+                and normalized_evidence[:40] not in normalized_text
+            ):
                 real_evidence = _extract_first_sentence(text)
                 if real_evidence and real_evidence != "Not stated":
                     out["evidence"] = real_evidence
@@ -371,7 +446,14 @@ class SummarizerService:
 
         return out
 
-    def _prompt(self, title: str, text: str, source_url: str, category: str, hints: Optional[Dict[str, Any]] = None) -> str:
+    def _prompt(
+        self,
+        title: str,
+        text: str,
+        source_url: str,
+        category: str,
+        hints: Optional[Dict[str, Any]] = None,
+    ) -> str:
         hints = hints or {}
 
         focus_section = ""
@@ -448,10 +530,15 @@ Rules for evidence:
 
     def _429_backoff(self, attempt: int) -> float:
         base = getattr(self.settings, "summarization_429_base_seconds", 2.0)
-        return min(60.0, max(1.0, base ** attempt))
+        return min(60.0, max(1.0, base**attempt))
 
     async def _summarize_openai(
-        self, title: str, text: str, source_url: str, category: str, hints: Dict[str, Any]
+        self,
+        title: str,
+        text: str,
+        source_url: str,
+        category: str,
+        hints: Dict[str, Any],
     ) -> Dict[str, Any]:
         client = self._openai_client()
         if not client:
@@ -470,18 +557,34 @@ Rules for evidence:
                 return _parse_llm_json(raw, title)
             except Exception as e:
                 err_str = str(e).lower()
-                if "429" in err_str or "rate" in err_str or "too many requests" in err_str:
+                if (
+                    "429" in err_str
+                    or "rate" in err_str
+                    or "too many requests" in err_str
+                ):
                     if attempt < max_retries:
                         wait = self._429_backoff(attempt)
-                        logger.info("OpenAI 429, retry in %.1fs (attempt %d/%d)", wait, attempt + 1, max_retries)
+                        logger.info(
+                            "OpenAI 429, retry in %.1fs (attempt %d/%d)",
+                            wait,
+                            attempt + 1,
+                            max_retries,
+                        )
                         await asyncio.sleep(wait)
                         continue
-                    raise RateLimitError(f"OpenAI rate limited after {max_retries} retries") from e
+                    raise RateLimitError(
+                        f"OpenAI rate limited after {max_retries} retries"
+                    ) from e
                 raise ProviderError(f"OpenAI failed: {e}") from e
         raise ProviderError("OpenAI: max retries exhausted")
 
     async def _summarize_claude(
-        self, title: str, text: str, source_url: str, category: str, hints: Dict[str, Any]
+        self,
+        title: str,
+        text: str,
+        source_url: str,
+        category: str,
+        hints: Dict[str, Any],
     ) -> Dict[str, Any]:
         client = self._claude_client()
         if not client:
@@ -500,18 +603,34 @@ Rules for evidence:
                 return _parse_llm_json(raw, title)
             except Exception as e:
                 err_str = str(e).lower()
-                if "429" in err_str or "rate" in err_str or "too many requests" in err_str:
+                if (
+                    "429" in err_str
+                    or "rate" in err_str
+                    or "too many requests" in err_str
+                ):
                     if attempt < max_retries:
                         wait = self._429_backoff(attempt)
-                        logger.info("Claude 429, retry in %.1fs (attempt %d/%d)", wait, attempt + 1, max_retries)
+                        logger.info(
+                            "Claude 429, retry in %.1fs (attempt %d/%d)",
+                            wait,
+                            attempt + 1,
+                            max_retries,
+                        )
                         await asyncio.sleep(wait)
                         continue
-                    raise RateLimitError(f"Claude rate limited after {max_retries} retries") from e
+                    raise RateLimitError(
+                        f"Claude rate limited after {max_retries} retries"
+                    ) from e
                 raise ProviderError(f"Claude failed: {e}") from e
         raise ProviderError("Claude: max retries exhausted")
 
     async def _summarize_grok(
-        self, title: str, text: str, source_url: str, category: str, hints: Dict[str, Any]
+        self,
+        title: str,
+        text: str,
+        source_url: str,
+        category: str,
+        hints: Dict[str, Any],
     ) -> Dict[str, Any]:
         client = self._grok_client()
         if not client:
@@ -531,13 +650,24 @@ Rules for evidence:
                 return _parse_llm_json(raw, title)
             except Exception as e:
                 err_str = str(e).lower()
-                if "429" in err_str or "rate" in err_str or "too many requests" in err_str:
+                if (
+                    "429" in err_str
+                    or "rate" in err_str
+                    or "too many requests" in err_str
+                ):
                     if attempt < max_retries:
                         wait = self._429_backoff(attempt)
-                        logger.info("Grok 429, retry in %.1fs (attempt %d/%d)", wait, attempt + 1, max_retries)
+                        logger.info(
+                            "Grok 429, retry in %.1fs (attempt %d/%d)",
+                            wait,
+                            attempt + 1,
+                            max_retries,
+                        )
                         await asyncio.sleep(wait)
                         continue
-                    raise RateLimitError(f"Grok rate limited after {max_retries} retries") from e
+                    raise RateLimitError(
+                        f"Grok rate limited after {max_retries} retries"
+                    ) from e
                 raise ProviderError(f"Grok failed: {e}") from e
         raise ProviderError("Grok: max retries exhausted")
 
@@ -558,7 +688,12 @@ Rules for evidence:
                 _gemini_last_call_time = time.monotonic()
 
     async def _summarize_gemini(
-        self, title: str, text: str, source_url: str, category: str, hints: Dict[str, Any]
+        self,
+        title: str,
+        text: str,
+        source_url: str,
+        category: str,
+        hints: Dict[str, Any],
     ) -> Dict[str, Any]:
         key = (self.settings.gemini_api_key or "").strip()
         if not key:
@@ -596,7 +731,12 @@ Rules for evidence:
                     if resp.status_code == 429:
                         if attempt < max_retries:
                             wait = self._429_backoff(attempt)
-                            logger.info("Gemini 429, retry in %.1fs (attempt %d/%d)", wait, attempt + 1, max_retries)
+                            logger.info(
+                                "Gemini 429, retry in %.1fs (attempt %d/%d)",
+                                wait,
+                                attempt + 1,
+                                max_retries,
+                            )
                             await asyncio.sleep(wait)
                             continue
                         raise RateLimitError("Gemini rate limited after retries")
@@ -623,7 +763,9 @@ Rules for evidence:
                     break
         raise ProviderError(f"Gemini failed: {last_error}") from last_error
 
-    def _summarize_fallback(self, title: str, text: str, source_url: str, category: str) -> Dict[str, Any]:
+    def _summarize_fallback(
+        self, title: str, text: str, source_url: str, category: str
+    ) -> Dict[str, Any]:
         """Non-LLM fallback. Extracts real data from text — no hardcoded placeholders."""
         cleaned = re.sub(r"\s+", " ", (text or "")).strip()
         excerpt = cleaned[:2000]
@@ -639,18 +781,40 @@ Rules for evidence:
         )
 
         entities: List[str] = []
-        for ent in ["OpenAI", "Google", "Meta", "Anthropic", "Microsoft", "Mistral",
-                     "Hugging Face", "NVIDIA", "Cohere", "Stability AI", "DeepMind",
-                     "GPT", "Claude", "Gemini", "Llama", "Mixtral", "Amazon", "AWS"]:
+        for ent in [
+            "OpenAI",
+            "Google",
+            "Meta",
+            "Anthropic",
+            "Microsoft",
+            "Mistral",
+            "Hugging Face",
+            "NVIDIA",
+            "Cohere",
+            "Stability AI",
+            "DeepMind",
+            "GPT",
+            "Claude",
+            "Gemini",
+            "Llama",
+            "Mixtral",
+            "Amazon",
+            "AWS",
+        ]:
             if ent.lower() in lower:
                 entities.append(ent)
 
         tags: List[str] = [category]
         tag_patterns = {
-            "api": r"\bapi\b", "pricing": r"\bpric", "safety": r"\bsafety\b",
-            "benchmark": r"\bbenchmark", "multimodal": r"\bmultimodal",
-            "agents": r"\bagent", "training": r"\btraining\b",
-            "inference": r"\binference\b", "open-source": r"\bopen.?source\b",
+            "api": r"\bapi\b",
+            "pricing": r"\bpric",
+            "safety": r"\bsafety\b",
+            "benchmark": r"\bbenchmark",
+            "multimodal": r"\bmultimodal",
+            "agents": r"\bagent",
+            "training": r"\btraining\b",
+            "inference": r"\binference\b",
+            "open-source": r"\bopen.?source\b",
         }
         for tag, pattern in tag_patterns.items():
             if re.search(pattern, lower) and tag not in tags:
@@ -659,7 +823,10 @@ Rules for evidence:
         domain = _extract_domain(source_url) or "source"
         entity_str = f" involving {', '.join(entities[:3])}" if entities else ""
         why = f"New {category} update from {domain}{entity_str}."
-        if any(re.search(p, lower) for p in [r"\bga\b", r"\bgeneral avail", r"\blaunch", r"\breleased?\b"]):
+        if any(
+            re.search(p, lower)
+            for p in [r"\bga\b", r"\bgeneral avail", r"\blaunch", r"\breleased?\b"]
+        ):
             why += " Involves a product launch or GA release — may affect competitive positioning."
         elif re.search(r"\bbenchmark|\bleaderboard|\bsota\b", lower):
             why += " Contains benchmark or leaderboard data — may shift model rankings."
@@ -669,7 +836,11 @@ Rules for evidence:
             why += " Review for strategic or technical relevance."
 
         return {
-            "summary_short": (title + ". " + excerpt[:max(0, 900 - len(title))]).strip() if excerpt else title,
+            "summary_short": (
+                (title + ". " + excerpt[: max(0, 900 - len(title))]).strip()
+                if excerpt
+                else title
+            ),
             "summary_long": excerpt[:2000] if excerpt else title,
             "why_it_matters": why,
             "evidence": evidence,

@@ -63,10 +63,10 @@ SECTION_TITLES = {
 }
 
 SECTION_ICONS = {
-    "release": "\u25B6",
-    "research": "\u25C6",
-    "benchmark": "\u25A0",
-    "other": "\u25CF",
+    "release": "\u25b6",
+    "research": "\u25c6",
+    "benchmark": "\u25a0",
+    "other": "\u25cf",
 }
 
 CATEGORY_COLORS = {
@@ -119,86 +119,172 @@ def _build_styles():
     s = {}
 
     s["cover_title"] = ParagraphStyle(
-        "CoverTitle", fontName="Helvetica-Bold", fontSize=32,
-        leading=38, textColor=NAVY, alignment=TA_CENTER, spaceAfter=4,
+        "CoverTitle",
+        fontName="Helvetica-Bold",
+        fontSize=32,
+        leading=38,
+        textColor=NAVY,
+        alignment=TA_CENTER,
+        spaceAfter=4,
     )
     s["cover_subtitle"] = ParagraphStyle(
-        "CoverSubtitle", fontName="Helvetica", fontSize=14,
-        leading=20, textColor=SLATE_500, alignment=TA_CENTER, spaceAfter=2,
+        "CoverSubtitle",
+        fontName="Helvetica",
+        fontSize=14,
+        leading=20,
+        textColor=SLATE_500,
+        alignment=TA_CENTER,
+        spaceAfter=2,
     )
     s["cover_date"] = ParagraphStyle(
-        "CoverDate", fontName="Helvetica-Bold", fontSize=13,
-        leading=18, textColor=ACCENT_BLUE, alignment=TA_CENTER, spaceAfter=4,
+        "CoverDate",
+        fontName="Helvetica-Bold",
+        fontSize=13,
+        leading=18,
+        textColor=ACCENT_BLUE,
+        alignment=TA_CENTER,
+        spaceAfter=4,
     )
     s["cover_meta"] = ParagraphStyle(
-        "CoverMeta", fontName="Helvetica", fontSize=10,
-        leading=15, textColor=SLATE_400, alignment=TA_CENTER, spaceAfter=2,
+        "CoverMeta",
+        fontName="Helvetica",
+        fontSize=10,
+        leading=15,
+        textColor=SLATE_400,
+        alignment=TA_CENTER,
+        spaceAfter=2,
     )
 
     s["h1"] = ParagraphStyle(
-        "H1", fontName="Helvetica-Bold", fontSize=20, leading=26,
-        textColor=NAVY, spaceAfter=10, spaceBefore=4,
+        "H1",
+        fontName="Helvetica-Bold",
+        fontSize=20,
+        leading=26,
+        textColor=NAVY,
+        spaceAfter=10,
+        spaceBefore=4,
     )
     s["h2"] = ParagraphStyle(
-        "H2", fontName="Helvetica-Bold", fontSize=16, leading=22,
-        textColor=DARK_BLUE, spaceAfter=8, spaceBefore=14,
+        "H2",
+        fontName="Helvetica-Bold",
+        fontSize=16,
+        leading=22,
+        textColor=DARK_BLUE,
+        spaceAfter=8,
+        spaceBefore=14,
     )
     s["h3"] = ParagraphStyle(
-        "H3", fontName="Helvetica-Bold", fontSize=12, leading=16,
-        textColor=NAVY, spaceAfter=4, spaceBefore=2,
+        "H3",
+        fontName="Helvetica-Bold",
+        fontSize=12,
+        leading=16,
+        textColor=NAVY,
+        spaceAfter=4,
+        spaceBefore=2,
     )
 
     s["body"] = ParagraphStyle(
-        "Body", fontName="Helvetica", fontSize=10, leading=14.5,
-        textColor=SLATE_700, spaceAfter=6,
+        "Body",
+        fontName="Helvetica",
+        fontSize=10,
+        leading=14.5,
+        textColor=SLATE_700,
+        spaceAfter=6,
     )
     s["body_sm"] = ParagraphStyle(
-        "BodySmall", fontName="Helvetica", fontSize=9, leading=13,
-        textColor=SLATE_500, spaceAfter=3,
+        "BodySmall",
+        fontName="Helvetica",
+        fontSize=9,
+        leading=13,
+        textColor=SLATE_500,
+        spaceAfter=3,
     )
     s["label"] = ParagraphStyle(
-        "Label", fontName="Helvetica-Bold", fontSize=9, leading=12,
-        textColor=SLATE_500, spaceAfter=2,
+        "Label",
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        textColor=SLATE_500,
+        spaceAfter=2,
     )
     s["meta"] = ParagraphStyle(
-        "Meta", fontName="Helvetica", fontSize=8.5, leading=12,
-        textColor=SLATE_400, spaceAfter=2,
+        "Meta",
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=12,
+        textColor=SLATE_400,
+        spaceAfter=2,
     )
     s["link"] = ParagraphStyle(
-        "Link", fontName="Helvetica", fontSize=8.5, leading=12,
-        textColor=ACCENT_BLUE, spaceAfter=2,
+        "Link",
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=12,
+        textColor=ACCENT_BLUE,
+        spaceAfter=2,
     )
     s["evidence"] = ParagraphStyle(
-        "Evidence", fontName="Helvetica-Oblique", fontSize=9, leading=13,
-        textColor=SLATE_500, leftIndent=12, borderPadding=4, spaceAfter=4,
+        "Evidence",
+        fontName="Helvetica-Oblique",
+        fontSize=9,
+        leading=13,
+        textColor=SLATE_500,
+        leftIndent=12,
+        borderPadding=4,
+        spaceAfter=4,
     )
     s["tag"] = ParagraphStyle(
-        "Tag", fontName="Helvetica", fontSize=8, leading=10,
-        textColor=ACCENT_BLUE, spaceAfter=2,
+        "Tag",
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10,
+        textColor=ACCENT_BLUE,
+        spaceAfter=2,
     )
     s["stat_value"] = ParagraphStyle(
-        "StatValue", fontName="Helvetica-Bold", fontSize=22, leading=26,
-        textColor=ACCENT_BLUE, alignment=TA_CENTER,
+        "StatValue",
+        fontName="Helvetica-Bold",
+        fontSize=22,
+        leading=26,
+        textColor=ACCENT_BLUE,
+        alignment=TA_CENTER,
     )
     s["stat_label"] = ParagraphStyle(
-        "StatLabel", fontName="Helvetica", fontSize=8, leading=11,
-        textColor=SLATE_500, alignment=TA_CENTER,
+        "StatLabel",
+        fontName="Helvetica",
+        fontSize=8,
+        leading=11,
+        textColor=SLATE_500,
+        alignment=TA_CENTER,
     )
     s["table_header"] = ParagraphStyle(
-        "TblHeader", fontName="Helvetica-Bold", fontSize=8.5, leading=11,
+        "TblHeader",
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=11,
         textColor=WHITE,
     )
     s["table_cell"] = ParagraphStyle(
-        "TblCell", fontName="Helvetica", fontSize=8.5, leading=12,
+        "TblCell",
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=12,
         textColor=SLATE_700,
     )
     s["table_cell_bold"] = ParagraphStyle(
-        "TblCellBold", fontName="Helvetica-Bold", fontSize=8.5, leading=12,
+        "TblCellBold",
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=12,
         textColor=NAVY,
     )
     s["footer_text"] = ParagraphStyle(
-        "FooterText", fontName="Helvetica", fontSize=10, leading=14,
-        textColor=SLATE_500, alignment=TA_CENTER,
+        "FooterText",
+        fontName="Helvetica",
+        fontSize=10,
+        leading=14,
+        textColor=SLATE_500,
+        alignment=TA_CENTER,
     )
     return s
 
@@ -220,7 +306,11 @@ def _header_footer(canvas, doc, date_str: str, total_findings: int):
 
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(SLATE_400)
-    canvas.drawRightString(PAGE_W - MARGIN_R, PAGE_H - 0.46 * inch, f"Daily Intelligence Digest  |  {date_str}")
+    canvas.drawRightString(
+        PAGE_W - MARGIN_R,
+        PAGE_H - 0.46 * inch,
+        f"Daily Intelligence Digest  |  {date_str}",
+    )
 
     # Footer
     canvas.setStrokeColor(GRAY_200)
@@ -229,7 +319,11 @@ def _header_footer(canvas, doc, date_str: str, total_findings: int):
 
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(SLATE_400)
-    canvas.drawString(MARGIN_L, 0.38 * inch, f"Frontier AI Radar — {total_findings} findings  |  Confidential")
+    canvas.drawString(
+        MARGIN_L,
+        0.38 * inch,
+        f"Frontier AI Radar — {total_findings} findings  |  Confidential",
+    )
     canvas.drawRightString(PAGE_W - MARGIN_R, 0.38 * inch, f"Page {doc.page}")
 
     canvas.restoreState()
@@ -239,24 +333,33 @@ def _header_footer(canvas, doc, date_str: str, total_findings: int):
 # Helpers
 # ---------------------------------------------------------------------------
 def _accent_rule():
-    return HRFlowable(width="100%", thickness=1.5, color=ACCENT_BLUE, spaceAfter=8, spaceBefore=4)
+    return HRFlowable(
+        width="100%", thickness=1.5, color=ACCENT_BLUE, spaceAfter=8, spaceBefore=4
+    )
 
 
 def _light_rule():
-    return HRFlowable(width="100%", thickness=0.5, color=GRAY_200, spaceAfter=6, spaceBefore=6)
+    return HRFlowable(
+        width="100%", thickness=0.5, color=GRAY_200, spaceAfter=6, spaceBefore=6
+    )
 
 
 def _stat_cell(value: str, label: str, styles):
     return Table(
-        [[Paragraph(value, styles["stat_value"])], [Paragraph(label, styles["stat_label"])]],
+        [
+            [Paragraph(value, styles["stat_value"])],
+            [Paragraph(label, styles["stat_label"])],
+        ],
         colWidths=[1.4 * inch],
         rowHeights=[30, 16],
-        style=TableStyle([
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-        ]),
+        style=TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        ),
     )
 
 
@@ -291,9 +394,12 @@ class PDFGenerator:
     ) -> str:
         buf = io.BytesIO()
         doc = SimpleDocTemplate(
-            buf, pagesize=letter,
-            rightMargin=MARGIN_R, leftMargin=MARGIN_L,
-            topMargin=0.7 * inch, bottomMargin=0.7 * inch,
+            buf,
+            pagesize=letter,
+            rightMargin=MARGIN_R,
+            leftMargin=MARGIN_L,
+            topMargin=0.7 * inch,
+            bottomMargin=0.7 * inch,
         )
         st = _build_styles()
 
@@ -317,17 +423,35 @@ class PDFGenerator:
         # COVER PAGE
         # =====================================================================
         flow.append(Spacer(1, 1.8 * inch))
-        flow.append(HRFlowable(width="40%", thickness=2.5, color=ACCENT_BLUE, spaceAfter=16, spaceBefore=0))
+        flow.append(
+            HRFlowable(
+                width="40%",
+                thickness=2.5,
+                color=ACCENT_BLUE,
+                spaceAfter=16,
+                spaceBefore=0,
+            )
+        )
         flow.append(Paragraph("FRONTIER AI RADAR", st["cover_title"]))
         flow.append(Spacer(1, 0.08 * inch))
         flow.append(Paragraph("Daily Intelligence Digest", st["cover_subtitle"]))
         flow.append(Spacer(1, 0.35 * inch))
-        flow.append(HRFlowable(width="20%", thickness=1, color=GRAY_200, spaceAfter=14, spaceBefore=0))
+        flow.append(
+            HRFlowable(
+                width="20%", thickness=1, color=GRAY_200, spaceAfter=14, spaceBefore=0
+            )
+        )
         flow.append(Paragraph(date_display, st["cover_date"]))
         flow.append(Spacer(1, 0.5 * inch))
         flow.append(Paragraph(f"{total} findings  |  Run #{run_id}", st["cover_meta"]))
-        flow.append(Paragraph("Generated by Multi-Agent Intelligence System", st["cover_meta"]))
-        flow.append(Paragraph("Audience: Research, Product &amp; Strategy Teams", st["cover_meta"]))
+        flow.append(
+            Paragraph("Generated by Multi-Agent Intelligence System", st["cover_meta"])
+        )
+        flow.append(
+            Paragraph(
+                "Audience: Research, Product &amp; Strategy Teams", st["cover_meta"]
+            )
+        )
         flow.append(PageBreak())
 
         # =====================================================================
@@ -337,22 +461,28 @@ class PDFGenerator:
         flow.append(_accent_rule())
 
         # --- Statistics bar ---
-        stats_data = [[
-            _stat_cell(str(total), "TOTAL FINDINGS", st),
-            _stat_cell(str(n_release), "RELEASES", st),
-            _stat_cell(str(n_research), "RESEARCH", st),
-            _stat_cell(str(n_benchmark), "BENCHMARKS", st),
-            _stat_cell(str(n_other), "OTHER", st),
-        ]]
+        stats_data = [
+            [
+                _stat_cell(str(total), "TOTAL FINDINGS", st),
+                _stat_cell(str(n_release), "RELEASES", st),
+                _stat_cell(str(n_research), "RESEARCH", st),
+                _stat_cell(str(n_benchmark), "BENCHMARKS", st),
+                _stat_cell(str(n_other), "OTHER", st),
+            ]
+        ]
         stats_table = Table(stats_data, colWidths=[CONTENT_W / 5] * 5)
-        stats_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), PALE_BLUE),
-            ("BOX", (0, 0), (-1, -1), 0.5, LIGHT_BLUE),
-            ("LINEAFTER", (0, 0), (-2, -1), 0.5, LIGHT_BLUE),
-            ("TOPPADDING", (0, 0), (-1, -1), 8),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ]))
+        stats_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), PALE_BLUE),
+                    ("BOX", (0, 0), (-1, -1), 0.5, LIGHT_BLUE),
+                    ("LINEAFTER", (0, 0), (-2, -1), 0.5, LIGHT_BLUE),
+                    ("TOPPADDING", (0, 0), (-1, -1), 8),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ]
+            )
+        )
         flow.append(stats_table)
         flow.append(Spacer(1, 0.25 * inch))
 
@@ -372,26 +502,38 @@ class PDFGenerator:
                 src_url = str(fo.source_url)
                 pub = fo.publisher or "—"
                 conf_hex = _hex(_confidence_color(fo.confidence))
-                rows.append([
-                    Paragraph(str(i), st["table_cell"]),
-                    Paragraph(f"<b>{fo.title}</b>", st["table_cell_bold"]),
-                    Paragraph(f'<a href="{src_url}" color="#2563EB">{pub}</a>', st["table_cell"]),
-                    _category_badge(fo.category, st),
-                    Paragraph(f'<font color="{conf_hex}"><b>{fo.confidence:.0%}</b></font> {_confidence_label(fo.confidence)}', st["table_cell"]),
-                ])
+                rows.append(
+                    [
+                        Paragraph(str(i), st["table_cell"]),
+                        Paragraph(f"<b>{fo.title}</b>", st["table_cell_bold"]),
+                        Paragraph(
+                            f'<a href="{src_url}" color="#2563EB">{pub}</a>',
+                            st["table_cell"],
+                        ),
+                        _category_badge(fo.category, st),
+                        Paragraph(
+                            f'<font color="{conf_hex}"><b>{fo.confidence:.0%}</b></font> {_confidence_label(fo.confidence)}',
+                            st["table_cell"],
+                        ),
+                    ]
+                )
             col_w = [0.28 * inch, 2.6 * inch, 1.3 * inch, 0.8 * inch, 1.22 * inch]
             tbl = Table(rows, colWidths=col_w, repeatRows=1)
-            tbl.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), DARK_BLUE),
-                ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, GRAY_50]),
-                ("GRID", (0, 0), (-1, -1), 0.4, GRAY_200),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 5),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-                ("TOPPADDING", (0, 0), (-1, -1), 5),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-            ]))
+            tbl.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), DARK_BLUE),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
+                        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, GRAY_50]),
+                        ("GRID", (0, 0), (-1, -1), 0.4, GRAY_200),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                        ("TOPPADDING", (0, 0), (-1, -1), 5),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                    ]
+                )
+            )
             flow.append(tbl)
             flow.append(Spacer(1, 0.25 * inch))
 
@@ -425,16 +567,26 @@ class PDFGenerator:
                 continue
 
             section_title = SECTION_TITLES.get(section_key, section_key.title())
-            icon = SECTION_ICONS.get(section_key, "\u25CF")
+            icon = SECTION_ICONS.get(section_key, "\u25cf")
             cat_color = CATEGORY_COLORS.get(section_key, SLATE_500)
             cat_hex = _hex(cat_color)
 
-            flow.append(Paragraph(
-                f'<font color="{cat_hex}">{icon}</font>  {section_title}  '
-                f'<font color="#94A3B8" size="11">({len(findings)} finding{"s" if len(findings) != 1 else ""})</font>',
-                st["h1"],
-            ))
-            flow.append(HRFlowable(width="100%", thickness=2, color=cat_color, spaceAfter=12, spaceBefore=2))
+            flow.append(
+                Paragraph(
+                    f'<font color="{cat_hex}">{icon}</font>  {section_title}  '
+                    f'<font color="#94A3B8" size="11">({len(findings)} finding{"s" if len(findings) != 1 else ""})</font>',
+                    st["h1"],
+                )
+            )
+            flow.append(
+                HRFlowable(
+                    width="100%",
+                    thickness=2,
+                    color=cat_color,
+                    spaceAfter=12,
+                    spaceBefore=2,
+                )
+            )
 
             for idx, f in enumerate(findings[:50]):
                 card = self._build_finding_card(f, idx + 1, st, section_key)
@@ -448,10 +600,12 @@ class PDFGenerator:
         # =====================================================================
         flow.append(Paragraph("Appendix — Sources &amp; Evidence", st["h1"]))
         flow.append(_accent_rule())
-        flow.append(Paragraph(
-            f"Complete reference list of {total} findings with source links and supporting evidence.",
-            st["body_sm"],
-        ))
+        flow.append(
+            Paragraph(
+                f"Complete reference list of {total} findings with source links and supporting evidence.",
+                st["body_sm"],
+            )
+        )
         flow.append(Spacer(1, 0.15 * inch))
 
         for idx, f in enumerate(all_findings[:100], 1):
@@ -475,11 +629,17 @@ class PDFGenerator:
 
         # --- Final footer ---
         flow.append(Spacer(1, 0.3 * inch))
-        flow.append(HRFlowable(width="30%", thickness=1, color=GRAY_200, spaceAfter=10, spaceBefore=0))
-        flow.append(Paragraph(
-            f"Generated by Frontier AI Radar  |  {total} findings  |  {date_display}",
-            st["footer_text"],
-        ))
+        flow.append(
+            HRFlowable(
+                width="30%", thickness=1, color=GRAY_200, spaceAfter=10, spaceBefore=0
+            )
+        )
+        flow.append(
+            Paragraph(
+                f"Generated by Frontier AI Radar  |  {total} findings  |  {date_display}",
+                st["footer_text"],
+            )
+        )
 
         # Build
         def on_page(canvas, doc_ref):
@@ -488,7 +648,9 @@ class PDFGenerator:
         doc.build(flow, onFirstPage=on_page, onLaterPages=on_page)
 
         buf.seek(0)
-        filename = f"frontier_ai_radar_{report_date.strftime('%Y_%m_%d')}_run{run_id}.pdf"
+        filename = (
+            f"frontier_ai_radar_{report_date.strftime('%Y_%m_%d')}_run{run_id}.pdf"
+        )
         path = self.storage / filename
         path.write_bytes(buf.read())
         try:
@@ -499,7 +661,11 @@ class PDFGenerator:
         return str(self.storage / filename)
 
     def _build_finding_card(
-        self, f: FindingOut, num: int, st: dict, section_key: str,
+        self,
+        f: FindingOut,
+        num: int,
+        st: dict,
+        section_key: str,
     ) -> list:
         """Build a visually distinct card block for a single finding."""
         elements = []
@@ -513,30 +679,36 @@ class PDFGenerator:
         meta_parts = []
         if f.publisher:
             meta_parts.append(f"<b>Source:</b> {f.publisher}")
-        meta_parts.append(f'<b>Confidence:</b> <font color="{conf_hex}">{f.confidence:.0%} ({_confidence_label(f.confidence)})</font>')
+        meta_parts.append(
+            f'<b>Confidence:</b> <font color="{conf_hex}">{f.confidence:.0%} ({_confidence_label(f.confidence)})</font>'
+        )
         meta_parts.append(f'<font color="{cat_hex}"><b>{f.category.upper()}</b></font>')
         meta_line = Paragraph("  |  ".join(meta_parts), st["meta"])
 
         header_content = Table(
             [[title_para], [meta_line]],
             colWidths=[CONTENT_W - 0.15 * inch],
-            style=TableStyle([
-                ("TOPPADDING", (0, 0), (-1, -1), 2),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-            ]),
+            style=TableStyle(
+                [
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ]
+            ),
         )
 
         card_table = Table(
             [[header_content]],
             colWidths=[CONTENT_W],
-            style=TableStyle([
-                ("BACKGROUND", (0, 0), (-1, -1), GRAY_50),
-                ("LINEBELOW", (0, 0), (-1, -1), 0.5, GRAY_200),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ]),
+            style=TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), GRAY_50),
+                    ("LINEBELOW", (0, 0), (-1, -1), 0.5, GRAY_200),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ]
+            ),
         )
         elements.append(card_table)
         elements.append(Spacer(1, 0.04 * inch))
@@ -549,7 +721,11 @@ class PDFGenerator:
         if f.summary_long:
             elements.append(Spacer(1, 0.03 * inch))
             elements.append(Paragraph("<b>Details</b>", st["label"]))
-            long_text = f.summary_long if isinstance(f.summary_long, str) else str(f.summary_long)
+            long_text = (
+                f.summary_long
+                if isinstance(f.summary_long, str)
+                else str(f.summary_long)
+            )
             for line in long_text.split("\n"):
                 line = line.strip()
                 if line:
@@ -581,10 +757,12 @@ class PDFGenerator:
 
         # --- Source link ---
         elements.append(Spacer(1, 0.02 * inch))
-        elements.append(Paragraph(
-            f'<a href="{f_url}" color="#2563EB">{f_url}</a>',
-            st["link"],
-        ))
+        elements.append(
+            Paragraph(
+                f'<a href="{f_url}" color="#2563EB">{f_url}</a>',
+                st["link"],
+            )
+        )
 
         # --- Card bottom divider ---
         elements.append(Spacer(1, 0.06 * inch))

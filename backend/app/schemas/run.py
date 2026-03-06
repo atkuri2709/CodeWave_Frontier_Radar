@@ -49,10 +49,13 @@ class RunOut(BaseModel):
 
 # --------------- Scheduled Jobs ---------------
 
+
 class ScheduledJobCreate(BaseModel):
     pipeline_name: str = Field(..., min_length=1, max_length=256)
     scheduler_name: str = Field(..., min_length=1, max_length=256)
-    frequency: str = Field(default="daily", pattern=r"^(daily|weekly|monthly|yearly|interval)$")
+    frequency: str = Field(
+        default="daily", pattern=r"^(daily|weekly|monthly|yearly|interval)$"
+    )
     run_time: Optional[str] = Field(default="06:30", pattern=r"^\d{1,2}:\d{2}$")
     timezone: Optional[str] = "UTC"
     start_date: Optional[str] = None
@@ -66,7 +69,9 @@ class ScheduledJobCreate(BaseModel):
 class ScheduledJobUpdate(BaseModel):
     pipeline_name: Optional[str] = Field(default=None, max_length=256)
     scheduler_name: Optional[str] = Field(default=None, max_length=256)
-    frequency: Optional[str] = Field(default=None, pattern=r"^(daily|weekly|monthly|yearly|interval)$")
+    frequency: Optional[str] = Field(
+        default=None, pattern=r"^(daily|weekly|monthly|yearly|interval)$"
+    )
     run_time: Optional[str] = Field(default=None, pattern=r"^\d{1,2}:\d{2}$")
     timezone: Optional[str] = None
     start_date: Optional[str] = None
@@ -98,6 +103,7 @@ class ScheduledJobOut(BaseModel):
 
 
 # --------------- Pipeline Configs ---------------
+
 
 class PipelineConfigCreate(BaseModel):
     pipeline_name: str = Field(..., min_length=1, max_length=256)

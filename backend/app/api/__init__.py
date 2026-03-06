@@ -1,6 +1,16 @@
 from fastapi import APIRouter
 
-from app.api.routes import runs, sources, findings, digests, config, email_recipients, scheduler, logs, pipeline_configs
+from app.api.routes import (
+    runs,
+    sources,
+    findings,
+    digests,
+    config,
+    email_recipients,
+    scheduler,
+    logs,
+    pipeline_configs,
+)
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(runs.router, prefix="/runs", tags=["runs"])
@@ -13,4 +23,6 @@ api_router.include_router(
 api_router.include_router(config.router, prefix="/config", tags=["config"])
 api_router.include_router(scheduler.router, prefix="/scheduler", tags=["scheduler"])
 api_router.include_router(logs.router, prefix="/logs", tags=["logs"])
-api_router.include_router(pipeline_configs.router, prefix="/pipeline-configs", tags=["pipeline-configs"])
+api_router.include_router(
+    pipeline_configs.router, prefix="/pipeline-configs", tags=["pipeline-configs"]
+)

@@ -16,13 +16,26 @@ router = APIRouter()
 @router.get("/", response_model=List[FindingSummary])
 async def list_findings(
     run_id: Optional[int] = Query(None, description="Filter by run ID"),
-    agent_id: Optional[str] = Query(None, description="Filter by agent (competitors, model_providers, research, hf_benchmarks)"),
-    category: Optional[str] = Query(None, description="Filter by category (release, research, benchmark)"),
-    publisher: Optional[str] = Query(None, description="Filter by publisher name (case-insensitive partial match)"),
+    agent_id: Optional[str] = Query(
+        None,
+        description="Filter by agent (competitors, model_providers, research, hf_benchmarks)",
+    ),
+    category: Optional[str] = Query(
+        None, description="Filter by category (release, research, benchmark)"
+    ),
+    publisher: Optional[str] = Query(
+        None, description="Filter by publisher name (case-insensitive partial match)"
+    ),
     tag: Optional[str] = Query(None, description="Filter findings containing this tag"),
-    entity: Optional[str] = Query(None, description="Filter findings mentioning this entity"),
-    search: Optional[str] = Query(None, description="Search in title, summary, and why_it_matters"),
-    min_confidence: Optional[float] = Query(None, ge=0, le=1, description="Minimum confidence score"),
+    entity: Optional[str] = Query(
+        None, description="Filter findings mentioning this entity"
+    ),
+    search: Optional[str] = Query(
+        None, description="Search in title, summary, and why_it_matters"
+    ),
+    min_confidence: Optional[float] = Query(
+        None, ge=0, le=1, description="Minimum confidence score"
+    ),
     limit: int = Query(100, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -41,19 +54,23 @@ async def list_findings(
         q = q.where(Finding.confidence >= min_confidence)
     if search:
         pattern = f"%{search}%"
-        q = q.where(or_(
-            Finding.title.ilike(pattern),
-            Finding.summary_short.ilike(pattern),
-            Finding.why_it_matters.ilike(pattern),
-        ))
+        q = q.where(
+            or_(
+                Finding.title.ilike(pattern),
+                Finding.summary_short.ilike(pattern),
+                Finding.why_it_matters.ilike(pattern),
+            )
+        )
     if tag:
         q = q.where(Finding.tags.contains(tag))
     if entity:
         q = q.where(Finding.entities.contains(entity))
 
-    q = q.order_by(
-        Finding.impact_score.desc().nullslast(), Finding.created_at.desc()
-    ).offset(offset).limit(limit)
+    q = (
+        q.order_by(Finding.impact_score.desc().nullslast(), Finding.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
 
     result = await db.execute(q)
     rows = result.scalars().all()

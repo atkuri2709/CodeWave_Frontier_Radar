@@ -139,9 +139,20 @@ class HFBenchmarksAgent(BaseAgent):
                     extracted_text=text,
                 )
                 findings.append(finding)
-                logger.info("[HFBenchmarks] URL %d/%d: created finding '%s'", ui + 1, len(urls_to_fetch), (title or url)[:80])
+                logger.info(
+                    "[HFBenchmarks] URL %d/%d: created finding '%s'",
+                    ui + 1,
+                    len(urls_to_fetch),
+                    (title or url)[:80],
+                )
             except Exception as e:
-                logger.error("[HFBenchmarks] URL %d/%d FAILED (%s): %s", ui + 1, len(urls_to_fetch), url[:80], e)
+                logger.error(
+                    "[HFBenchmarks] URL %d/%d FAILED (%s): %s",
+                    ui + 1,
+                    len(urls_to_fetch),
+                    url[:80],
+                    e,
+                )
 
         return AgentResult(
             agent_id=self.agent_id,

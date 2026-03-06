@@ -10,11 +10,41 @@ from app.schemas.finding import FindingCreate
 logger = logging.getLogger(__name__)
 
 SIMILARITY_THRESHOLD = 0.70
-STOPWORDS = frozenset({
-    "a", "an", "the", "and", "or", "of", "to", "in", "for", "on", "with",
-    "is", "are", "was", "were", "be", "been", "by", "at", "from", "as",
-    "this", "that", "it", "its", "new", "we", "our", "has", "have", "had",
-})
+STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "of",
+        "to",
+        "in",
+        "for",
+        "on",
+        "with",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "by",
+        "at",
+        "from",
+        "as",
+        "this",
+        "that",
+        "it",
+        "its",
+        "new",
+        "we",
+        "our",
+        "has",
+        "have",
+        "had",
+    }
+)
 
 
 def _normalize_title(title: str) -> set[str]:
@@ -41,7 +71,9 @@ def _entity_overlap(a: list, b: list) -> float:
     return len(set_a & set_b) / len(set_a | set_b)
 
 
-def _combined_similarity(f1: FindingCreate, f2: FindingCreate, tokens_a: set, tokens_b: set) -> float:
+def _combined_similarity(
+    f1: FindingCreate, f2: FindingCreate, tokens_a: set, tokens_b: set
+) -> float:
     """Weighted combination: 60% title similarity + 40% entity overlap."""
     title_sim = _title_similarity(tokens_a, tokens_b)
     entity_sim = _entity_overlap(f1.entities, f2.entities)
@@ -91,7 +123,9 @@ class DedupService:
                 if sim >= SIMILARITY_THRESHOLD:
                     logger.debug(
                         "Semantic dedup: dropping '%s' (sim=%.2f with '%s')",
-                        (f.title or "")[:60], sim, (existing.title or "")[:60],
+                        (f.title or "")[:60],
+                        sim,
+                        (existing.title or "")[:60],
                     )
                     is_dup = True
                     break
@@ -101,12 +135,18 @@ class DedupService:
 
         removed = len(findings) - len(accepted)
         if removed:
-            logger.info("Dedup: %d → %d findings (%d duplicates removed)", len(findings), len(accepted), removed)
+            logger.info(
+                "Dedup: %d → %d findings (%d duplicates removed)",
+                len(findings),
+                len(accepted),
+                removed,
+            )
 
         return accepted
 
     def cluster_by_topic(
-        self, findings: List[FindingCreate],
+        self,
+        findings: List[FindingCreate],
     ) -> dict[str, List[FindingCreate]]:
         """Group by category for digest sections."""
         clusters: dict[str, List[FindingCreate]] = {

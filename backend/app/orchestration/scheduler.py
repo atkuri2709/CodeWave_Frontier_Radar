@@ -39,6 +39,7 @@ def _parse_time(run_time: str) -> tuple[int, int]:
 def _get_timezone(tz_str: str):
     try:
         from zoneinfo import ZoneInfo
+
         return ZoneInfo(tz_str)
     except Exception:
         logger.warning("Invalid timezone '%s', using system default", tz_str)
@@ -59,9 +60,12 @@ async def _run_pipeline(pipeline_name: str):
     manager = RunManager()
     try:
         run_id, run_config = await manager.start_run(
-            trigger="schedule", pipeline_name=pipeline_name,
+            trigger="schedule",
+            pipeline_name=pipeline_name,
         )
-        logger.info("Scheduled run started: pipeline=%s run_id=%s", pipeline_name, run_id)
+        logger.info(
+            "Scheduled run started: pipeline=%s run_id=%s", pipeline_name, run_id
+        )
         asyncio.create_task(manager._execute_run(run_id, run_config))
     except Exception as e:
         logger.exception("Scheduled pipeline '%s' failed: %s", pipeline_name, e)
@@ -71,6 +75,7 @@ def _load_jobs_sync():
     """Synchronously load all ScheduledJob rows (for use during scheduler start)."""
     import sqlite3
     from app.config import get_settings
+
     settings = get_settings()
     db_url = settings.database_url
     db_path = db_url.split("///")[-1].split("?")[0]
@@ -105,6 +110,7 @@ def _auto_disable_job(job_id: int | None):
         return
     import sqlite3
     from app.config import get_settings
+
     settings = get_settings()
     db_path = settings.database_url.split("///")[-1].split("?")[0]
     try:
@@ -191,21 +197,36 @@ def start_scheduler() -> None:
 
         end_date_val = getattr(trigger, "end_date", None)
         if end_date_val is not None:
-            end_naive = end_date_val.replace(tzinfo=None) if end_date_val.tzinfo else end_date_val
+            end_naive = (
+                end_date_val.replace(tzinfo=None)
+                if end_date_val.tzinfo
+                else end_date_val
+            )
             if end_naive < now:
-                logger.info("Skipping expired schedule '%s' (ended %s)", scheduler_name, end_date_val)
+                logger.info(
+                    "Skipping expired schedule '%s' (ended %s)",
+                    scheduler_name,
+                    end_date_val,
+                )
                 _auto_disable_job(job.get("id"))
                 continue
 
         _scheduler.add_job(
-            _run_pipeline, trigger, id=jid, replace_existing=True,
+            _run_pipeline,
+            trigger,
+            id=jid,
+            replace_existing=True,
             args=[pipeline_name],
         )
         added += 1
-        logger.info("Scheduled '%s' (pipeline: %s): %s", scheduler_name, pipeline_name, desc)
+        logger.info(
+            "Scheduled '%s' (pipeline: %s): %s", scheduler_name, pipeline_name, desc
+        )
 
     if added == 0:
-        logger.info("All scheduled jobs are expired or none to run — scheduler not started")
+        logger.info(
+            "All scheduled jobs are expired or none to run — scheduler not started"
+        )
         _scheduler = None
         return
 

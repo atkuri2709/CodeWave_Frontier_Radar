@@ -121,7 +121,9 @@ class ScheduledJob(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     pipeline_name: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
-    scheduler_name: Mapped[str] = mapped_column(String(256), nullable=False, unique=True)
+    scheduler_name: Mapped[str] = mapped_column(
+        String(256), nullable=False, unique=True
+    )
     frequency: Mapped[str] = mapped_column(String(16), default="daily")
     run_time: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
     timezone: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
@@ -207,9 +209,7 @@ class LogEntry(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("runs.id"), nullable=False, index=True
     )
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     level: Mapped[str] = mapped_column(String(16), nullable=False, default="INFO")
     logger_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)

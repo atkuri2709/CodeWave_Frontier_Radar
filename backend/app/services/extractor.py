@@ -84,7 +84,9 @@ class ExtractorService:
         if published_date:
             metadata["published_date"] = published_date.isoformat()
 
-        desc_tag = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", attrs={"property": "og:description"})
+        desc_tag = soup.find("meta", attrs={"name": "description"}) or soup.find(
+            "meta", attrs={"property": "og:description"}
+        )
         if desc_tag and desc_tag.get("content"):
             metadata["description"] = desc_tag["content"][:500]
 

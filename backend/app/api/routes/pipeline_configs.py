@@ -15,9 +15,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[PipelineConfigOut])
 async def list_pipeline_configs(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(PipelineConfig).order_by(PipelineConfig.id.desc())
-    )
+    result = await db.execute(select(PipelineConfig).order_by(PipelineConfig.id.desc()))
     return result.scalars().all()
 
 

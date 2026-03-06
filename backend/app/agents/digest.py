@@ -117,12 +117,16 @@ class DigestAgent(BaseAgent):
 
         # Executive summary: detailed narrative with full summaries
         if top7:
-            exec_lines = [f"Today's intelligence scan captured {total} findings across {len([k for k, v in findings_by_section.items() if v])} categories. The top {len(top7)} developments are:\n"]
+            exec_lines = [
+                f"Today's intelligence scan captured {total} findings across {len([k for k, v in findings_by_section.items() if v])} categories. The top {len(top7)} developments are:\n"
+            ]
             for i, fo in enumerate(top7, 1):
                 summary = fo.summary_short or fo.title
                 exec_lines.append(f"{i}. {fo.title}")
                 if fo.publisher:
-                    exec_lines.append(f"   Source: {fo.publisher} | Confidence: {fo.confidence:.0%}")
+                    exec_lines.append(
+                        f"   Source: {fo.publisher} | Confidence: {fo.confidence:.0%}"
+                    )
                 exec_lines.append(f"   {summary}")
                 if fo.why_it_matters:
                     exec_lines.append(f"   Why it matters: {fo.why_it_matters}")
@@ -154,7 +158,9 @@ class DigestAgent(BaseAgent):
             for fo in findings_out[:15]:
                 top_entities.update(fo.entities or [])
             if top_entities:
-                what_changed += f" Key entities mentioned: {', '.join(sorted(top_entities)[:12])}."
+                what_changed += (
+                    f" Key entities mentioned: {', '.join(sorted(top_entities)[:12])}."
+                )
         else:
             what_changed = "No new changes detected since the last run."
 
@@ -169,8 +175,12 @@ class DigestAgent(BaseAgent):
             if impact_tags:
                 parts.append(f"Key themes: {', '.join(sorted(impact_tags)[:10])}.")
             if impact_entities:
-                parts.append(f"Organizations involved: {', '.join(sorted(impact_entities)[:10])}.")
-            parts.append("Review the full report for source links, evidence, and confidence scores.")
+                parts.append(
+                    f"Organizations involved: {', '.join(sorted(impact_entities)[:10])}."
+                )
+            parts.append(
+                "Review the full report for source links, evidence, and confidence scores."
+            )
             why_it_matters = " ".join(parts)
         else:
             why_it_matters = ""

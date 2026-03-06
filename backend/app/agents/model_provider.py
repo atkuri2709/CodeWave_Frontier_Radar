@@ -47,7 +47,11 @@ class ModelProviderAgent(BaseAgent):
             rss_feeds = prov.get("rss_feeds") or []
             logger.info(
                 "[ModelProviders] Processing source %d/%d: '%s' — %d URLs, %d RSS feeds, config_url=%s",
-                pi + 1, len(providers), name, len(urls), len(rss_feeds),
+                pi + 1,
+                len(providers),
+                name,
+                len(urls),
+                len(rss_feeds),
                 prov.get("source_config_url", "none"),
             )
             focus = prov.get("focus")
@@ -112,7 +116,12 @@ class ModelProviderAgent(BaseAgent):
                     )
                     pages_crawled += 1
                     if code != 200:
-                        logger.info("[ModelProviders] '%s' URL: HTTP %d — skipped (%s)", name, code, url[:80])
+                        logger.info(
+                            "[ModelProviders] '%s' URL: HTTP %d — skipped (%s)",
+                            name,
+                            code,
+                            url[:80],
+                        )
                         continue
                     title, text, pub_date, meta = self.extractor.extract_html(
                         html, url, selectors
@@ -131,11 +140,19 @@ class ModelProviderAgent(BaseAgent):
                                 "Headless fallback model provider %s: %s", url, e
                             )
                     if not (text or "").strip():
-                        logger.info("[ModelProviders] '%s' URL: empty content — skipped (%s)", name, url[:80])
+                        logger.info(
+                            "[ModelProviders] '%s' URL: empty content — skipped (%s)",
+                            name,
+                            url[:80],
+                        )
                         continue
                     diff_hash = self.detector.content_hash(text)
                     if await self.detector.hash_exists_in_db(diff_hash):
-                        logger.info("[ModelProviders] '%s' URL: content unchanged — skipped (%s)", name, url[:80])
+                        logger.info(
+                            "[ModelProviders] '%s' URL: content unchanged — skipped (%s)",
+                            name,
+                            url[:80],
+                        )
                         continue
                     summary = await self.summarizer.summarize(
                         title or url,
@@ -145,7 +162,9 @@ class ModelProviderAgent(BaseAgent):
                         {"publisher": name, "focus": focus, "model_provider": True},
                         content_hash=diff_hash,
                     )
-                    short = (summary.get("summary_short") or title or url).strip()[:1024]
+                    short = (summary.get("summary_short") or title or url).strip()[
+                        :1024
+                    ]
                     entities = summary.get("entities") or []
                     tags = summary.get("tags") or []
                     raw_meta = dict(meta) if meta else {}
@@ -183,9 +202,15 @@ class ModelProviderAgent(BaseAgent):
                         extracted_text=text,
                     )
                     findings.append(finding)
-                    logger.info("[ModelProviders] '%s' URL: created finding '%s'", name, (title or url)[:80])
+                    logger.info(
+                        "[ModelProviders] '%s' URL: created finding '%s'",
+                        name,
+                        (title or url)[:80],
+                    )
                 except Exception as e:
-                    logger.error("[ModelProviders] '%s' URL FAILED (%s): %s", name, url[:80], e)
+                    logger.error(
+                        "[ModelProviders] '%s' URL FAILED (%s): %s", name, url[:80], e
+                    )
 
         return AgentResult(
             agent_id=self.agent_id,
@@ -227,8 +252,11 @@ class ModelProviderAgent(BaseAgent):
         )
         short = (summary.get("summary_short") or title).strip()[:1024]
         raw_meta = {
-            "title": title, "link": link, "author": entry.get("author"),
-            "published": pub.isoformat() if pub else None, "source": "rss",
+            "title": title,
+            "link": link,
+            "author": entry.get("author"),
+            "published": pub.isoformat() if pub else None,
+            "source": "rss",
         }
         if summary.get("evidence") and any(
             x in (summary.get("evidence") or "").lower()

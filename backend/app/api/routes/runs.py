@@ -41,7 +41,9 @@ async def trigger_run(
     """Trigger a manual run. Returns run record (status pending/running). Pipeline runs in background."""
     if body.save_config and body.pipeline_name and body.config_json:
         existing = await db.execute(
-            select(PipelineConfig).where(PipelineConfig.pipeline_name == body.pipeline_name)
+            select(PipelineConfig).where(
+                PipelineConfig.pipeline_name == body.pipeline_name
+            )
         )
         pc = existing.scalar_one_or_none()
         if pc:

@@ -17,13 +17,17 @@ class RunLogCollector(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         try:
-            self.entries.append({
-                "run_id": self.run_id,
-                "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc),
-                "level": record.levelname,
-                "logger_name": record.name,
-                "message": self.format(record),
-            })
+            self.entries.append(
+                {
+                    "run_id": self.run_id,
+                    "timestamp": datetime.fromtimestamp(
+                        record.created, tz=timezone.utc
+                    ),
+                    "level": record.levelname,
+                    "logger_name": record.name,
+                    "message": self.format(record),
+                }
+            )
         except Exception:
             self.handleError(record)
 

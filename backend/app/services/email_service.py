@@ -38,8 +38,12 @@ class EmailService:
             return False
         if self.settings.smtp_host and self.settings.smtp_user:
             return await self._send_smtp_with_retry(
-                recipients, subject, body_plain, body_html,
-                pdf_path, attachment_filename,
+                recipients,
+                subject,
+                body_plain,
+                body_html,
+                pdf_path,
+                attachment_filename,
             )
         logger.warning("Email not configured (no SMTP). Skipping send.")
         return False
@@ -67,12 +71,18 @@ class EmailService:
                     with open(pdf_path, "rb") as f:
                         part = MIMEApplication(f.read(), _subtype="pdf")
                         name = attachment_filename or Path(pdf_path).name
-                        part.add_header("Content-Disposition", "attachment", filename=name)
+                        part.add_header(
+                            "Content-Disposition", "attachment", filename=name
+                        )
                         msg.attach(part)
 
-                with smtplib.SMTP(self.settings.smtp_host, self.settings.smtp_port) as server:
+                with smtplib.SMTP(
+                    self.settings.smtp_host, self.settings.smtp_port
+                ) as server:
                     server.starttls()
-                    server.login(self.settings.smtp_user, self.settings.smtp_password or "")
+                    server.login(
+                        self.settings.smtp_user, self.settings.smtp_password or ""
+                    )
                     server.sendmail(msg["From"], recipients, msg.as_string())
 
                 logger.info("Digest email sent to %s", recipients)
@@ -85,14 +95,21 @@ class EmailService:
                 )
                 return False
 
-            except (smtplib.SMTPServerDisconnected, smtplib.SMTPConnectError,
-                    smtplib.SMTPResponseException, OSError) as e:
+            except (
+                smtplib.SMTPServerDisconnected,
+                smtplib.SMTPConnectError,
+                smtplib.SMTPResponseException,
+                OSError,
+            ) as e:
                 last_error = e
                 if attempt < MAX_RETRIES:
                     wait = min(BACKOFF_MAX, BACKOFF_BASE ** (attempt + 1))
                     logger.info(
                         "Email send failed (%s), retry %d/%d in %.1fs",
-                        type(e).__name__, attempt + 1, MAX_RETRIES, wait,
+                        type(e).__name__,
+                        attempt + 1,
+                        MAX_RETRIES,
+                        wait,
                     )
                     await asyncio.sleep(wait)
                     continue

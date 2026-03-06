@@ -19,9 +19,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[ScheduledJobOut])
 async def list_scheduled_jobs(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(ScheduledJob).order_by(ScheduledJob.id.desc())
-    )
+    result = await db.execute(select(ScheduledJob).order_by(ScheduledJob.id.desc()))
     return result.scalars().all()
 
 

@@ -65,9 +65,7 @@ async def merge_sources_into_config(config: Dict[str, Any]) -> Dict[str, Any]:
     source_ids: List[int] = []
     try:
         async with async_session() as session:
-            result = await session.execute(
-                select(Source).where(Source.enabled == True)
-            )
+            result = await session.execute(select(Source).where(Source.enabled == True))
             sources = result.scalars().all()
     except Exception as e:
         logger.warning("Could not load sources from DB: %s", e)
@@ -205,7 +203,10 @@ class RunManager:
         Neither: load only global from YAML, agents come from DB sources only.
         """
         if config_override:
-            config = {"global": {}, "agents": config_override.get("agents", config_override)}
+            config = {
+                "global": {},
+                "agents": config_override.get("agents", config_override),
+            }
             config = await merge_sources_into_config(config)
         elif use_yaml:
             config = load_radar_config(full=True)
@@ -299,16 +300,24 @@ class RunManager:
 
                 agents_to_run: List[tuple] = []
                 if has_competitors:
-                    agents_to_run.append(("competitors", "Competitors", CompetitorAgent()))
+                    agents_to_run.append(
+                        ("competitors", "Competitors", CompetitorAgent())
+                    )
                 if has_model_providers:
-                    agents_to_run.append(("model_providers", "Model Providers", ModelProviderAgent()))
+                    agents_to_run.append(
+                        ("model_providers", "Model Providers", ModelProviderAgent())
+                    )
                 if has_research:
                     agents_to_run.append(("research", "Research", ResearchAgent()))
                 if has_hf:
-                    agents_to_run.append(("hf_benchmarks", "HF Benchmarks", HFBenchmarksAgent()))
+                    agents_to_run.append(
+                        ("hf_benchmarks", "HF Benchmarks", HFBenchmarksAgent())
+                    )
 
                 if not agents_to_run:
-                    logger.info("Run %s: no sources configured — nothing to run", run_id)
+                    logger.info(
+                        "Run %s: no sources configured — nothing to run", run_id
+                    )
 
                 results = await asyncio.gather(
                     *[run_agent(agent, context) for _, _, agent in agents_to_run],
@@ -327,7 +336,11 @@ class RunManager:
                         }
                         logger.error(
                             "Run %s: [AGENT %d/%d: %s] FAILED — %s",
-                            run_id, i + 1, len(agents_to_run), log_name, str(r)[:500],
+                            run_id,
+                            i + 1,
+                            len(agents_to_run),
+                            log_name,
+                            str(r)[:500],
                         )
                     else:
                         pages = getattr(r, "pages_processed", 0)
@@ -340,22 +353,35 @@ class RunManager:
                         all_findings.extend(r.findings)
                         logger.info(
                             "Run %s: [AGENT %d/%d: %s] status=%s pages_crawled=%d findings=%d",
-                            run_id, i + 1, len(agents_to_run), log_name,
-                            r.status, pages, len(r.findings),
+                            run_id,
+                            i + 1,
+                            len(agents_to_run),
+                            log_name,
+                            r.status,
+                            pages,
+                            len(r.findings),
                         )
                         if r.error_message:
                             logger.warning(
                                 "Run %s: [AGENT %s] partial error: %s",
-                                run_id, log_name, r.error_message[:300],
+                                run_id,
+                                log_name,
+                                r.error_message[:300],
                             )
                         for fi, finding in enumerate(r.findings):
                             logger.info(
                                 "Run %s: [AGENT %s] Finding %d: '%s' (url=%s, diff_hash=%s, has_content=%s)",
-                                run_id, log_name, fi + 1,
+                                run_id,
+                                log_name,
+                                fi + 1,
                                 (finding.title or "")[:80],
                                 str(finding.source_url)[:100],
                                 "yes" if finding.diff_hash else "no",
-                                "yes" if (finding.raw_content or finding.extracted_text) else "no",
+                                (
+                                    "yes"
+                                    if (finding.raw_content or finding.extracted_text)
+                                    else "no"
+                                ),
                             )
 
                 logger.info(
@@ -377,7 +403,9 @@ class RunManager:
                 def _resolve_source_id(cfg_url: str, src_url: str) -> int | None:
                     cfg_n = _normalize_url(cfg_url)
                     src_n = _normalize_url(src_url)
-                    sid = url_to_source_id_norm.get(cfg_n) or url_to_source_id_norm.get(src_n)
+                    sid = url_to_source_id_norm.get(cfg_n) or url_to_source_id_norm.get(
+                        src_n
+                    )
                     if sid:
                         return sid
                     for key, val in url_to_source_id_norm.items():
@@ -402,7 +430,10 @@ class RunManager:
                         source_id_missing += 1
                         logger.warning(
                             "Run %s: source_id not resolved for finding '%s' (config_url=%s, source_url=%s)",
-                            run_id, (f.title or "")[:60], source_cfg_url, source_url_str,
+                            run_id,
+                            (f.title or "")[:60],
+                            source_cfg_url,
+                            source_url_str,
                         )
 
                     summary_short = (f.summary_short or f.title or "")[:1024]
@@ -462,8 +493,12 @@ class RunManager:
                 logger.info(
                     "Run %s: DB persistence — findings=%d, snapshots=%d, extractions=%d, "
                     "source_id_resolved=%d, source_id_missing=%d",
-                    run_id, saved_findings, saved_snapshots, saved_extractions,
-                    source_id_resolved, source_id_missing,
+                    run_id,
+                    saved_findings,
+                    saved_snapshots,
+                    saved_extractions,
+                    source_id_resolved,
+                    source_id_missing,
                 )
                 run.agent_results = agent_results
                 run.findings_count = len(all_findings)

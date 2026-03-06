@@ -43,9 +43,24 @@ def _domain(url: str) -> str:
 
 
 BROAD_RELEASE_TERMS = [
-    "release", "changelog", "update", "announce", "introducing", "launch",
-    "new", "model", "api", "feature", "version", "v1", "v2", "beta", "ga",
-    "generally available", "preview", "deprecat",
+    "release",
+    "changelog",
+    "update",
+    "announce",
+    "introducing",
+    "launch",
+    "new",
+    "model",
+    "api",
+    "feature",
+    "version",
+    "v1",
+    "v2",
+    "beta",
+    "ga",
+    "generally available",
+    "preview",
+    "deprecat",
 ]
 
 
@@ -161,7 +176,11 @@ class CompetitorAgent(BaseAgent):
             rss_feeds = comp.get("rss_feeds") or []
             logger.info(
                 "[Competitors] Processing source %d/%d: '%s' — %d URLs, %d RSS feeds, config_url=%s",
-                ci + 1, len(competitors), name, len(release_urls), len(rss_feeds),
+                ci + 1,
+                len(competitors),
+                name,
+                len(release_urls),
+                len(rss_feeds),
                 comp.get("source_config_url", "none"),
             )
             keywords = comp.get("keywords")
@@ -251,7 +270,11 @@ class CompetitorAgent(BaseAgent):
                     domain_counts[domain] = domain_counts.get(domain, 0) + 1
                     to_fetch.append((url, name, comp))
 
-            logger.info("[Competitors] '%s': %d page URLs to fetch (after discovery)", name, len(to_fetch))
+            logger.info(
+                "[Competitors] '%s': %d page URLs to fetch (after discovery)",
+                name,
+                len(to_fetch),
+            )
             # --- 3) Fetch each page URL: HTTP then headless fallback, extract, change detect, summarize ---
             for fi, (url, publisher_name, comp_config) in enumerate(to_fetch):
                 rate = comp_config.get("domain_rate_limit")
@@ -269,7 +292,13 @@ class CompetitorAgent(BaseAgent):
                     )
                     pages_crawled += 1
                     if code != 200:
-                        logger.info("[Competitors] '%s' URL %d/%d: HTTP %d — skipped", name, fi + 1, len(to_fetch), code)
+                        logger.info(
+                            "[Competitors] '%s' URL %d/%d: HTTP %d — skipped",
+                            name,
+                            fi + 1,
+                            len(to_fetch),
+                            code,
+                        )
                         continue
                     title, text, pub_date, meta = self.extractor.extract_html(
                         html, url, selectors
@@ -286,16 +315,31 @@ class CompetitorAgent(BaseAgent):
                         except Exception as e:
                             logger.debug("Headless fallback for %s: %s", url, e)
                     if not (text or "").strip():
-                        logger.info("[Competitors] '%s' URL %d/%d: empty content — skipped", name, fi + 1, len(to_fetch))
+                        logger.info(
+                            "[Competitors] '%s' URL %d/%d: empty content — skipped",
+                            name,
+                            fi + 1,
+                            len(to_fetch),
+                        )
                         continue
                     if keywords_list and not _matches_keywords(
                         (title or "") + " " + (text or ""), keywords_list
                     ):
-                        logger.info("[Competitors] '%s' URL %d/%d: no keyword match — skipped", name, fi + 1, len(to_fetch))
+                        logger.info(
+                            "[Competitors] '%s' URL %d/%d: no keyword match — skipped",
+                            name,
+                            fi + 1,
+                            len(to_fetch),
+                        )
                         continue
                     diff_hash = self.detector.content_hash(text)
                     if await self.detector.hash_exists_in_db(diff_hash):
-                        logger.info("[Competitors] '%s' URL %d/%d: content unchanged — skipped", name, fi + 1, len(to_fetch))
+                        logger.info(
+                            "[Competitors] '%s' URL %d/%d: content unchanged — skipped",
+                            name,
+                            fi + 1,
+                            len(to_fetch),
+                        )
                         continue
                     summary = await self.summarizer.summarize(
                         title or url,
@@ -305,7 +349,9 @@ class CompetitorAgent(BaseAgent):
                         {"publisher": publisher_name, "keywords": keywords_list},
                         content_hash=diff_hash,
                     )
-                    short = (summary.get("summary_short") or title or url).strip()[:1024]
+                    short = (summary.get("summary_short") or title or url).strip()[
+                        :1024
+                    ]
                     source_cfg_url = comp_config.get("source_config_url")
                     finding = FindingCreate(
                         title=(title or url)[:512],
@@ -329,9 +375,22 @@ class CompetitorAgent(BaseAgent):
                         extracted_text=text,
                     )
                     findings.append(finding)
-                    logger.info("[Competitors] '%s' URL %d/%d: created finding '%s'", name, fi + 1, len(to_fetch), (title or url)[:80])
+                    logger.info(
+                        "[Competitors] '%s' URL %d/%d: created finding '%s'",
+                        name,
+                        fi + 1,
+                        len(to_fetch),
+                        (title or url)[:80],
+                    )
                 except Exception as e:
-                    logger.error("[Competitors] '%s' URL %d/%d FAILED (%s): %s", name, fi + 1, len(to_fetch), url[:80], e)
+                    logger.error(
+                        "[Competitors] '%s' URL %d/%d FAILED (%s): %s",
+                        name,
+                        fi + 1,
+                        len(to_fetch),
+                        url[:80],
+                        e,
+                    )
 
         # --- 4) Rank by impact (GA, pricing, API, latency, security, compliance) ---
         findings.sort(key=_impact_score_finding, reverse=True)
@@ -377,8 +436,11 @@ class CompetitorAgent(BaseAgent):
         short = (summary.get("summary_short") or title).strip()[:1024]
         source_cfg_url = (comp_config or {}).get("source_config_url")
         rss_meta = {
-            "title": title, "link": link, "author": entry.get("author"),
-            "published": pub.isoformat() if pub else None, "source": "rss",
+            "title": title,
+            "link": link,
+            "author": entry.get("author"),
+            "published": pub.isoformat() if pub else None,
+            "source": "rss",
         }
         return FindingCreate(
             title=title,

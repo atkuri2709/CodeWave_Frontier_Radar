@@ -13,10 +13,47 @@ from app.schemas.source import SourceCreate, SourceOut, SourceUpdate
 router = APIRouter()
 
 DEFAULT_KEYWORDS = {
-    "competitors": ["release", "changelog", "update", "launch", "GA", "beta", "API", "model", "feature", "version"],
-    "model_providers": ["model", "API", "pricing", "safety", "release", "benchmark", "context", "tool use", "agents"],
-    "research": ["benchmark", "eval", "agent", "multimodal", "safety", "alignment", "llm", "transformer"],
-    "hf_benchmarks": ["leaderboard", "benchmark", "SOTA", "evaluation", "ranking", "model"],
+    "competitors": [
+        "release",
+        "changelog",
+        "update",
+        "launch",
+        "GA",
+        "beta",
+        "API",
+        "model",
+        "feature",
+        "version",
+    ],
+    "model_providers": [
+        "model",
+        "API",
+        "pricing",
+        "safety",
+        "release",
+        "benchmark",
+        "context",
+        "tool use",
+        "agents",
+    ],
+    "research": [
+        "benchmark",
+        "eval",
+        "agent",
+        "multimodal",
+        "safety",
+        "alignment",
+        "llm",
+        "transformer",
+    ],
+    "hf_benchmarks": [
+        "leaderboard",
+        "benchmark",
+        "SOTA",
+        "evaluation",
+        "ranking",
+        "model",
+    ],
 }
 
 
@@ -29,7 +66,9 @@ async def create_source(
     cleaned = ", ".join(u.strip() for u in body.url.split(",") if u.strip())
     if not cleaned:
         raise HTTPException(status_code=400, detail="At least one URL is required")
-    keywords = body.keywords if body.keywords else DEFAULT_KEYWORDS.get(body.agent_id, [])
+    keywords = (
+        body.keywords if body.keywords else DEFAULT_KEYWORDS.get(body.agent_id, [])
+    )
     s = Source(
         url=cleaned,
         agent_id=body.agent_id,
@@ -51,7 +90,11 @@ async def create_source(
 
 def _source_out(s: Source) -> SourceOut:
     return SourceOut(
-        id=s.id, url=s.url, agent_id=s.agent_id, name=s.name, rss_feed=s.rss_feed,
+        id=s.id,
+        url=s.url,
+        agent_id=s.agent_id,
+        name=s.name,
+        rss_feed=s.rss_feed,
         rate_limit=s.rate_limit,
         include_rules=s.include_rules or [],
         exclude_rules=s.exclude_rules or [],

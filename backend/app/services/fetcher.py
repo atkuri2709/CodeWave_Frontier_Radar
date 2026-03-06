@@ -71,35 +71,62 @@ class FetcherService:
                 ) as client:
                     resp = await client.get(url)
 
-                    if resp.status_code in RETRYABLE_STATUS_CODES and attempt < MAX_RETRIES:
+                    if (
+                        resp.status_code in RETRYABLE_STATUS_CODES
+                        and attempt < MAX_RETRIES
+                    ):
                         wait = min(BACKOFF_MAX, BACKOFF_BASE ** (attempt + 1))
                         logger.info(
                             "Fetch %s returned %d, retry %d/%d in %.1fs",
-                            url[:80], resp.status_code, attempt + 1, MAX_RETRIES, wait,
+                            url[:80],
+                            resp.status_code,
+                            attempt + 1,
+                            MAX_RETRIES,
+                            wait,
                         )
                         await asyncio.sleep(wait)
                         continue
 
                     text = resp.text
-                    content_type = resp.headers.get("content-type", "text/html") or "text/html"
-                    if "application/rss" in content_type or "application/xml" in content_type:
+                    content_type = (
+                        resp.headers.get("content-type", "text/html") or "text/html"
+                    )
+                    if (
+                        "application/rss" in content_type
+                        or "application/xml" in content_type
+                    ):
                         content_type = "application/rss+xml"
-                    h = hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()
+                    h = hashlib.sha256(
+                        text.encode("utf-8", errors="replace")
+                    ).hexdigest()
                     if resp.status_code >= 400:
-                        logger.warning("Fetch %s returned HTTP %d", url[:80], resp.status_code)
+                        logger.warning(
+                            "Fetch %s returned HTTP %d", url[:80], resp.status_code
+                        )
                     return resp.status_code, text, content_type, h
 
-            except (httpx.TimeoutException, httpx.ConnectError, httpx.ReadError, OSError) as e:
+            except (
+                httpx.TimeoutException,
+                httpx.ConnectError,
+                httpx.ReadError,
+                OSError,
+            ) as e:
                 last_exc = e
                 if attempt < MAX_RETRIES:
                     wait = min(BACKOFF_MAX, BACKOFF_BASE ** (attempt + 1))
                     logger.info(
                         "Fetch %s failed (%s), retry %d/%d in %.1fs",
-                        url[:80], type(e).__name__, attempt + 1, MAX_RETRIES, wait,
+                        url[:80],
+                        type(e).__name__,
+                        attempt + 1,
+                        MAX_RETRIES,
+                        wait,
                     )
                     await asyncio.sleep(wait)
                     continue
-                logger.warning("Fetch %s failed after %d retries: %s", url[:80], MAX_RETRIES, e)
+                logger.warning(
+                    "Fetch %s failed after %d retries: %s", url[:80], MAX_RETRIES, e
+                )
                 raise
             except Exception as e:
                 logger.warning("Fetch error %s: %s", url[:80], e)
@@ -115,6 +142,7 @@ class FetcherService:
             raise RuntimeError("Playwright not available on this platform")
         try:
             from playwright.async_api import async_playwright
+
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
                 try:
@@ -126,7 +154,9 @@ class FetcherService:
                     )
                     text = await page.content()
                     content_type = "text/html"
-                    h = hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()
+                    h = hashlib.sha256(
+                        text.encode("utf-8", errors="replace")
+                    ).hexdigest()
                     return 200, text, content_type, h
                 finally:
                     await browser.close()

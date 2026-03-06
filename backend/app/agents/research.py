@@ -96,7 +96,11 @@ class ResearchAgent(BaseAgent):
                 except Exception as e:
                     logger.warning("arXiv fetch failed: %s", e)
 
-        logger.info("[Research] %d curated URLs to process, arxiv=%s", len(curated_urls), "enabled" if not research_cfg.get("disable_arxiv", False) else "disabled")
+        logger.info(
+            "[Research] %d curated URLs to process, arxiv=%s",
+            len(curated_urls),
+            "enabled" if not research_cfg.get("disable_arxiv", False) else "disabled",
+        )
         # Curated URLs (lab blogs, etc.)
         for ui, url in enumerate(curated_urls):
             if not url or not isinstance(url, str):
@@ -161,9 +165,20 @@ class ResearchAgent(BaseAgent):
                         extracted_text=text,
                     )
                 )
-                logger.info("[Research] URL %d/%d: created finding '%s'", ui + 1, len(curated_urls), (title or url)[:80])
+                logger.info(
+                    "[Research] URL %d/%d: created finding '%s'",
+                    ui + 1,
+                    len(curated_urls),
+                    (title or url)[:80],
+                )
             except Exception as e:
-                logger.error("[Research] URL %d/%d FAILED (%s): %s", ui + 1, len(curated_urls), url[:80], e)
+                logger.error(
+                    "[Research] URL %d/%d FAILED (%s): %s",
+                    ui + 1,
+                    len(curated_urls),
+                    url[:80],
+                    e,
+                )
 
         # Rank by relevance (benchmarks, eval, data-centric, agentic, multimodal, safety)
         findings.sort(
@@ -254,7 +269,9 @@ class ResearchAgent(BaseAgent):
             )
             short = (sum_out.get("summary_short") or title).strip()[:1024]
             arxiv_meta = {
-                "title": title, "link": link, "source": "arxiv",
+                "title": title,
+                "link": link,
+                "source": "arxiv",
                 "published": pub.isoformat() if pub else None,
                 "abstract": summary[:500] if summary else None,
             }

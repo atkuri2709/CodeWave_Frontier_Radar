@@ -17,7 +17,9 @@ class ChangeDetector:
         normalized = " ".join(text.split()).strip().lower()
         return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
-    def is_new_or_changed(self, current_hash: str, last_known_hash: Optional[str]) -> bool:
+    def is_new_or_changed(
+        self, current_hash: str, last_known_hash: Optional[str]
+    ) -> bool:
         if last_known_hash is None:
             return True
         return current_hash != last_known_hash
@@ -29,9 +31,12 @@ class ChangeDetector:
         try:
             from app.db.database import async_session
             from app.db.models import Finding
+
             async with async_session() as session:
                 result = await session.execute(
-                    select(func.count()).select_from(Finding).where(Finding.diff_hash == diff_hash)
+                    select(func.count())
+                    .select_from(Finding)
+                    .where(Finding.diff_hash == diff_hash)
                 )
                 count = result.scalar() or 0
                 return count > 0
