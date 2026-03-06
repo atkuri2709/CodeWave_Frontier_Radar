@@ -16,8 +16,8 @@ interface FormState {
   sourceRows: SourceRow[];
 }
 
-const defaultRow = (): SourceRow => ({ url: '', agent_id: 'competitors' });
-const emptyForm = (): FormState => ({ pipeline_name: '', pipeline_description: '', sourceRows: [defaultRow()] });
+const defaultRow = (agentId = ''): SourceRow => ({ url: '', agent_id: agentId });
+const emptyForm = (agentId = ''): FormState => ({ pipeline_name: '', pipeline_description: '', sourceRows: [defaultRow(agentId)] });
 
 interface PipelineView {
   config: PipelineConfig;
@@ -27,6 +27,7 @@ interface PipelineView {
 export default function SourcesPage() {
   const { agents, agentLabel, agentBadge } = useMeta();
   const AGENT_OPTIONS = agents.map(a => ({ value: a.id, label: a.label }));
+  const firstAgentId = agents[0]?.id || '';
 
   const [pipelines, setPipelines] = useState<PipelineView[]>([]);
   const [orphanSources, setOrphanSources] = useState<Source[]>([]);
@@ -67,14 +68,14 @@ export default function SourcesPage() {
     loadData().finally(() => setLoading(false));
   }, [loadData]);
 
-  const resetForm = () => { setForm(emptyForm()); setEditingConfigId(null); setShowForm(false); };
+  const resetForm = () => { setForm(emptyForm(firstAgentId)); setEditingConfigId(null); setShowForm(false); };
 
   const startEdit = (pv: PipelineView) => {
     const rows: SourceRow[] = pv.sources.map(s => ({ url: s.url, agent_id: s.agent_id }));
     setForm({
       pipeline_name: pv.config.pipeline_name,
       pipeline_description: pv.config.pipeline_description || '',
-      sourceRows: rows.length > 0 ? rows : [defaultRow()],
+      sourceRows: rows.length > 0 ? rows : [defaultRow(firstAgentId)],
     });
     setEditingConfigId(pv.config.id);
     setShowForm(true);
@@ -106,13 +107,13 @@ export default function SourcesPage() {
   };
 
   const addRow = () => {
-    setForm(prev => ({ ...prev, sourceRows: [...prev.sourceRows, defaultRow()] }));
+    setForm(prev => ({ ...prev, sourceRows: [...prev.sourceRows, defaultRow(firstAgentId)] }));
   };
 
   const removeRow = (idx: number) => {
     setForm(prev => ({
       ...prev,
-      sourceRows: prev.sourceRows.length <= 1 ? [defaultRow()] : prev.sourceRows.filter((_, i) => i !== idx),
+      sourceRows: prev.sourceRows.length <= 1 ? [defaultRow(firstAgentId)] : prev.sourceRows.filter((_, i) => i !== idx),
     }));
   };
 

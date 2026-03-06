@@ -97,6 +97,7 @@ async def list_findings(
             publisher=f.publisher,
             tags=f.tags or [],
             entities=f.entities or [],
+            impact_score=f.impact_score,
             created_at=f.created_at or f.date_detected,
         )
         for f in rows
@@ -130,5 +131,6 @@ async def get_finding(
         diff_hash=f.diff_hash,
         agent_id=f.agent_id,
         raw_metadata=f.raw_metadata,
+        impact_score=f.impact_score,
         created_at=f.created_at,
     )

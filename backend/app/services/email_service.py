@@ -208,22 +208,24 @@ class EmailService:
                 }
 
                 files = []
-                if pdf_path and Path(pdf_path).exists():
-                    name = attachment_filename or Path(pdf_path).name
-                    files.append(
-                        ("attachment", (name, open(pdf_path, "rb"), "application/pdf"))
-                    )
+                file_handles = []
+                try:
+                    if pdf_path and Path(pdf_path).exists():
+                        name = attachment_filename or Path(pdf_path).name
+                        fh = open(pdf_path, "rb")
+                        file_handles.append(fh)
+                        files.append(("attachment", (name, fh, "application/pdf")))
 
-                async with httpx.AsyncClient(timeout=30) as client:
-                    resp = await client.post(
-                        url,
-                        auth=("api", self.settings.mailgun_api_key),
-                        data=data,
-                        files=files if files else None,
-                    )
-
-                for _, fobj in files:
-                    fobj[1].close()
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        resp = await client.post(
+                            url,
+                            auth=("api", self.settings.mailgun_api_key),
+                            data=data,
+                            files=files if files else None,
+                        )
+                finally:
+                    for fh in file_handles:
+                        fh.close()
 
                 if resp.status_code == 200:
                     logger.info("Mailgun email sent to %s", recipient)

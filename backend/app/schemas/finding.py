@@ -52,6 +52,7 @@ class FindingOut(FindingCreate):
 
     id: int
     run_id: Optional[int] = None
+    impact_score: Optional[float] = None
     created_at: datetime
 
     class Config:
@@ -71,4 +72,5 @@ class FindingSummary(BaseModel):
     publisher: Optional[str] = None
     tags: List[str] = []
     entities: List[str] = []
+    impact_score: Optional[float] = None
     created_at: datetime

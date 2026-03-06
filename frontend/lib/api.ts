@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -59,6 +59,7 @@ export interface FindingSummary {
   publisher: string | null;
   tags: string[];
   entities: string[];
+  impact_score: number | null;
   created_at: string;
 }
 
@@ -156,7 +157,11 @@ export const api = {
     get: (id: number) => fetchApi<Source>(`/sources/${id}`),
     update: (id: number, body: Partial<Source>) =>
       fetchApi<Source>(`/sources/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
-    delete: (id: number) => fetch(`${API_BASE}/sources/${id}`, { method: 'DELETE' }),
+    delete: (id: number) =>
+      fetch(`${API_BASE}/sources/${id}`, { method: 'DELETE' }).then(res => {
+        if (!res.ok) throw new Error(`Delete source ${id} failed: ${res.status}`);
+        return res;
+      }),
   },
   findings: {
     list: (params?: { run_id?: number; agent_id?: string; category?: string; created_after?: string; created_before?: string; limit?: number }) => {

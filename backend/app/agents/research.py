@@ -256,6 +256,8 @@ class ResearchAgent(BaseAgent):
                 )
             except Exception:
                 pub = datetime.now(timezone.utc)
+            if context.since_timestamp and pub < context.since_timestamp:
+                continue
             diff_hash = self.detector.content_hash(combined) if combined else None
             if diff_hash and await self.detector.hash_exists_in_db(diff_hash):
                 continue

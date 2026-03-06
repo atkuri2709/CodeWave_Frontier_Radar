@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { api, type Digest } from '@/lib/api';
+import { api, API_BASE, type Digest } from '@/lib/api';
 import { useToast } from '../components/Toast';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 function isValidEmail(s: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim()); }
 
 export default function DigestsPage() {

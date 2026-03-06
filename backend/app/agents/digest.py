@@ -88,6 +88,7 @@ class DigestAgent(BaseAgent):
                 diff_hash=f.diff_hash,
                 agent_id=f.agent_id,
                 run_id=f.run_id,
+                impact_score=f.impact_score,
                 created_at=f.created_at or datetime.now(timezone.utc),
             )
             for f in findings_orm

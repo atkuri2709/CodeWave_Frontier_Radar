@@ -2,11 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, type Run, type FindingSummary, type PipelineConfig } from '@/lib/api';
+import { api, API_BASE, type Run, type FindingSummary, type PipelineConfig } from '@/lib/api';
 import { useToast } from './components/Toast';
 import Link from 'next/link';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 import { useMeta } from '@/lib/useMeta';
 
 function ConfidencePill({ value }: { value: number }) {
@@ -52,9 +50,12 @@ export default function DashboardPage() {
 
   const [, setTick] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setTick(t => t + 1), 60000);
+    const timer = setInterval(() => {
+      setTick(t => t + 1);
+      refreshData().catch(() => {});
+    }, 60000);
     return () => clearInterval(timer);
-  }, []);
+  }, [refreshData]);
 
   const lastRun = runs[0];
   const latestDigestId = digests[0]?.id ?? lastRun?.digest_id ?? null;
@@ -285,7 +286,7 @@ export default function DashboardPage() {
                   rows={8}
                   className="w-full rounded-lg border px-3 py-2 font-mono text-xs mb-2 resize-y"
                   style={{ borderColor: jsonError ? '#dc2626' : 'rgba(26,34,56,0.12)', background: '#0d1117', color: '#c9d1d9' }}
-                  placeholder='{"agents": {"competitors": [...]}}'
+                  placeholder={`{"agents": {"${agentIds[0] || 'agent'}": [...]}}`}
                 />
                 {jsonError && <p className="text-[10px] text-red-500 mb-2">{jsonError}</p>}
                 <div className="flex items-center gap-2 mb-3">
