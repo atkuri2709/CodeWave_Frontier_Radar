@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.db.models import PipelineConfig
-from app.schemas.run import PipelineConfigCreate, PipelineConfigOut
+from app.schemas.run import PipelineConfigCreate, PipelineConfigOut, PipelineConfigUpdate
 
 router = APIRouter()
 
@@ -28,6 +28,7 @@ async def create_pipeline_config(
         pipeline_name=body.pipeline_name,
         pipeline_description=body.pipeline_description,
         config_json=body.config_json,
+        enabled=body.enabled,
     )
     db.add(pc)
     await db.flush()
@@ -43,6 +44,22 @@ async def get_pipeline_config(
     pc = await db.get(PipelineConfig, config_id)
     if not pc:
         raise HTTPException(status_code=404, detail="Pipeline config not found")
+    return pc
+
+
+@router.patch("/{config_id}", response_model=PipelineConfigOut)
+async def update_pipeline_config(
+    config_id: int,
+    body: PipelineConfigUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    pc = await db.get(PipelineConfig, config_id)
+    if not pc:
+        raise HTTPException(status_code=404, detail="Pipeline config not found")
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(pc, field, value)
+    await db.flush()
+    await db.refresh(pc)
     return pc
 
 

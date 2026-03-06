@@ -115,22 +115,15 @@ class DigestAgent(BaseAgent):
         top7 = findings_out[:7]
         top_ids = [fo.id for fo in top7]
 
-        # Executive summary: detailed narrative with full summaries
+        # Executive summary: concise bullet points
         if top7:
+            active_cats = len([k for k, v in findings_by_section.items() if v])
             exec_lines = [
-                f"Today's intelligence scan captured {total} findings across {len([k for k, v in findings_by_section.items() if v])} categories. The top {len(top7)} developments are:\n"
+                f"Today's scan captured {total} findings across {active_cats} categories. Key developments:"
             ]
             for i, fo in enumerate(top7, 1):
-                summary = fo.summary_short or fo.title
-                exec_lines.append(f"{i}. {fo.title}")
-                if fo.publisher:
-                    exec_lines.append(
-                        f"   Source: {fo.publisher} | Confidence: {fo.confidence:.0%}"
-                    )
-                exec_lines.append(f"   {summary}")
-                if fo.why_it_matters:
-                    exec_lines.append(f"   Why it matters: {fo.why_it_matters}")
-                exec_lines.append("")
+                publisher = f" ({fo.publisher})" if fo.publisher else ""
+                exec_lines.append(f"{i}. {fo.title}{publisher}")
             exec_summary = "\n".join(exec_lines)
         else:
             exec_summary = "No new updates today."

@@ -7,8 +7,7 @@ import { useToast } from './components/Toast';
 import Link from 'next/link';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-const AGENT_LABELS: Record<string, string> = { competitors: 'Competitors', model_providers: 'Model Providers', research: 'Research', hf_benchmarks: 'Benchmarks' };
-const AGENT_BADGE: Record<string, string> = { competitors: 'agent-orange', model_providers: 'agent-lavender', research: 'agent-gold', hf_benchmarks: 'agent-navy' };
+import { useMeta } from '@/lib/useMeta';
 
 function ConfidencePill({ value }: { value: number }) {
   const pct = Math.round(value * 100);
@@ -38,6 +37,7 @@ export default function DashboardPage() {
 
   const router = useRouter();
   const toast = useToast();
+  const { agentLabel, agentBadge, agentIds } = useMeta();
 
   const refreshData = useCallback(async () => {
     const [r, f, d] = await Promise.all([
@@ -320,21 +320,24 @@ export default function DashboardPage() {
       ) : (
         <div className="stagger-children space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="stat-card">
+            <div className="stat-card flex flex-col">
               <div className="stat-icon" style={{ background: 'rgba(255,106,61,0.1)', color: '#FF6A3D' }}><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg></div>
-              <div className="stat-value">{totalFindings}</div><div className="stat-label">Total Findings</div>
+              <div className="stat-value flex-1 flex items-end">{totalFindings}</div>
+              <div className="stat-label">Total Findings</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card flex flex-col">
               <div className="stat-icon" style={{ background: 'rgba(157,170,242,0.12)', color: '#7580d4' }}><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.915-3.373a4.5 4.5 0 00-6.364-6.364L4.5 8.25" /></svg></div>
-              <div className="stat-value">{runs.length}</div><div className="stat-label">Total Runs</div>
+              <div className="stat-value flex-1 flex items-end">{runs.length}</div>
+              <div className="stat-label">Total Runs</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card flex flex-col">
               <div className="stat-icon" style={{ background: 'rgba(244,219,125,0.15)', color: '#b8960a' }}><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg></div>
-              <div className="stat-value">{digests.length}</div><div className="stat-label">Digests</div>
+              <div className="stat-value flex-1 flex items-end">{digests.length}</div>
+              <div className="stat-label">Digests</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card flex flex-col">
               <div className="stat-icon" style={{ background: lastRun?.status==='success'?'#ecfdf5':lastRun?.status==='failed'?'#fef2f2':'rgba(26,34,56,0.06)', color: lastRun?.status==='success'?'#059669':lastRun?.status==='failed'?'#dc2626':'#6b7394' }}><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-              <div className="stat-value text-lg">{lastRun ? <span className={`badge ${statusColor(lastRun.status)}`}>{lastRun.status==='running' && <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse-dot" />}{lastRun.status}</span> : '—'}</div>
+              <div className="stat-value flex-1 flex items-end">{lastRun ? <span className={`badge ${statusColor(lastRun.status)}`}>{lastRun.status==='running' && <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse-dot" />}{lastRun.status.toUpperCase()}</span> : '—'}</div>
               <div className="stat-label">Last Run {lastRun ? formatRelative(lastRun.started_at) : ''}</div>
             </div>
           </div>
@@ -343,7 +346,7 @@ export default function DashboardPage() {
             const agentTotals: Record<string, { count: number; pages: number; lastStatus: string; lastError?: string }> = {};
             for (const run of runs) {
               if (!run.agent_results) continue;
-              for (const key of ['competitors','model_providers','research','hf_benchmarks'] as const) {
+              for (const key of agentIds) {
                 const ar = run.agent_results[key];
                 if (!ar) continue;
                 if (!agentTotals[key]) agentTotals[key] = { count: 0, pages: 0, lastStatus: ar.status, lastError: ar.error };
@@ -355,13 +358,13 @@ export default function DashboardPage() {
             if (keys.length === 0) return null;
             return (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {(['competitors','model_providers','research','hf_benchmarks'] as const).map(key => {
+                {agentIds.map(key => {
                   const t = agentTotals[key]; if (!t) return null;
                   const failed = t.lastStatus === 'failed';
                   return (
                     <div key={key} className={`glass-card p-4 ${failed ? '!border-red-200' : ''}`}>
                       <div className="flex items-center justify-between">
-                        <span className={`px-2 py-0.5 text-[11px] font-bold ${AGENT_BADGE[key]}`}>{AGENT_LABELS[key]}</span>
+                        <span className={`px-2 py-0.5 text-[11px] font-bold ${agentBadge(key)}`}>{agentLabel(key)}</span>
                         <span className={`text-[11px] font-bold ${failed?'text-red-500':'text-emerald-600'}`}>{t.lastStatus}</span>
                       </div>
                       <div className="mt-3 flex items-baseline gap-2"><span className="text-xl font-extrabold" style={{ color: '#1A2238' }}>{t.count}</span><span className="text-xs" style={{ color: '#6b7394' }}>findings</span></div>
@@ -397,7 +400,7 @@ export default function DashboardPage() {
                         <span className="text-sm font-semibold transition-colors group-hover:text-[#FF6A3D] line-clamp-1" style={{ color: '#1A2238' }}>{f.title}</span>
                         <p className="mt-0.5 line-clamp-1 text-xs" style={{ color: '#6b7394' }}>{f.summary_short}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span className={`px-1.5 py-0.5 text-[10px] font-bold ${AGENT_BADGE[f.agent_id] || 'badge-zinc'}`}>{f.agent_id}</span>
+                          <span className={`px-1.5 py-0.5 text-[10px] font-bold ${agentBadge(f.agent_id)}`}>{agentLabel(f.agent_id)}</span>
                           <span className="rounded-lg px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(26,34,56,0.05)', color: '#6b7394' }}>{f.category}</span>
                           <ConfidencePill value={f.confidence} />
                         </div>

@@ -89,6 +89,11 @@ async def init_db() -> None:
                     "last_run_id",
                     "ALTER TABLE sources ADD COLUMN last_run_id INTEGER",
                 ),
+                (
+                    "pipeline_configs",
+                    "enabled",
+                    "ALTER TABLE pipeline_configs ADD COLUMN enabled BOOLEAN DEFAULT 1",
+                ),
             ]
 
             def _run_migrations(sync_conn):

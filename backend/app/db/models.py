@@ -79,6 +79,7 @@ class PipelineConfig(Base):
     pipeline_name: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
     pipeline_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     config_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

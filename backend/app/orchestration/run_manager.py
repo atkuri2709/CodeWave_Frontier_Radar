@@ -293,26 +293,17 @@ class RunManager:
                     async with sem:
                         return await agent.run(ctx)
 
-                has_competitors = bool(agents_config.get("competitors"))
-                has_model_providers = bool(agents_config.get("model_providers"))
-                has_research = bool(agents_config.get("research"))
-                has_hf = bool(agents_config.get("hf_benchmarks"))
+                AGENT_FACTORY = {
+                    "competitors": ("Competitors", CompetitorAgent),
+                    "model_providers": ("Model Providers", ModelProviderAgent),
+                    "research": ("Research", ResearchAgent),
+                    "hf_benchmarks": ("HF Benchmarks", HFBenchmarksAgent),
+                }
 
                 agents_to_run: List[tuple] = []
-                if has_competitors:
-                    agents_to_run.append(
-                        ("competitors", "Competitors", CompetitorAgent())
-                    )
-                if has_model_providers:
-                    agents_to_run.append(
-                        ("model_providers", "Model Providers", ModelProviderAgent())
-                    )
-                if has_research:
-                    agents_to_run.append(("research", "Research", ResearchAgent()))
-                if has_hf:
-                    agents_to_run.append(
-                        ("hf_benchmarks", "HF Benchmarks", HFBenchmarksAgent())
-                    )
+                for agent_key, (agent_label, agent_cls) in AGENT_FACTORY.items():
+                    if agents_config.get(agent_key):
+                        agents_to_run.append((agent_key, agent_label, agent_cls()))
 
                 if not agents_to_run:
                     logger.info(

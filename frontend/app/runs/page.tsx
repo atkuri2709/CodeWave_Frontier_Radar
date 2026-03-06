@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { api, type Run, type LogEntry } from '@/lib/api';
+import { useMeta } from '@/lib/useMeta';
 import Link from 'next/link';
-
-const AGENT_LABELS: Record<string, string> = { competitors: 'Competitors', model_providers: 'Model Providers', research: 'Research', hf_benchmarks: 'Benchmarks' };
-const AGENT_BADGE: Record<string, string> = { competitors: 'agent-orange', model_providers: 'agent-lavender', research: 'agent-gold', hf_benchmarks: 'agent-navy' };
 function statusColor(s: string) { return s === 'success' ? 'badge-emerald' : s === 'running' ? 'badge-amber' : s === 'failed' || s === 'partial' ? 'badge-red' : 'badge-zinc'; }
 
 const LOG_LEVEL_STYLE: Record<string, { bg: string; color: string }> = {
@@ -17,6 +15,7 @@ const LOG_LEVEL_STYLE: Record<string, { bg: string; color: string }> = {
 };
 
 export default function RunsPage() {
+  const { agentLabel, agentBadge, agentIds } = useMeta();
   const [runs, setRuns] = useState<Run[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedRun, setExpandedRun] = useState<number | null>(null);
@@ -115,12 +114,12 @@ export default function RunsPage() {
                     <div className="px-5 py-4">
                       {r.agent_results ? (
                         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                          {(['competitors','model_providers','research','hf_benchmarks'] as const).map(key => {
+                          {agentIds.map(key => {
                             const ar = r.agent_results?.[key]; if (!ar) return null;
                             const failed = ar.status === 'failed';
                             return (
                               <div key={key} className={`rounded-xl border p-3 ${failed?'border-red-200 bg-red-50':''}`} style={failed?{}:{borderColor:'rgba(26,34,56,0.06)',background:'rgba(26,34,56,0.02)'}}>
-                                <div className="flex items-center justify-between"><span className={`px-1.5 py-0.5 text-[10px] font-bold ${AGENT_BADGE[key]}`}>{AGENT_LABELS[key]}</span><span className={`text-[10px] font-bold ${failed?'text-red-500':'text-emerald-600'}`}>{ar.status}</span></div>
+                                <div className="flex items-center justify-between"><span className={`px-1.5 py-0.5 text-[10px] font-bold ${agentBadge(key)}`}>{agentLabel(key)}</span><span className={`text-[10px] font-bold ${failed?'text-red-500':'text-emerald-600'}`}>{ar.status}</span></div>
                                 <div className="mt-2 text-xs" style={{ color: '#6b7394' }}><span className="font-bold" style={{ color: '#1A2238' }}>{ar.count??0}</span> findings &middot; <span className="font-bold" style={{ color: '#1A2238' }}>{ar.pages_processed??0}</span> pages</div>
                                 {ar.error && <p className="mt-1 line-clamp-2 text-[10px] text-red-400">{ar.error}</p>}
                               </div>

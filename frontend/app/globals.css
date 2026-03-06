@@ -75,11 +75,12 @@ body {
     @apply flex h-10 w-10 items-center justify-center rounded-xl text-sm;
   }
   .stat-card .stat-value {
-    @apply mt-3 text-2xl font-extrabold tracking-tight;
+    @apply mt-3 text-2xl font-extrabold tracking-tight leading-8;
+    min-height: 2rem;
     color: var(--navy);
   }
   .stat-card .stat-label {
-    @apply mt-0.5 text-[11px] font-semibold uppercase tracking-wider;
+    @apply mt-1 text-[11px] font-semibold uppercase tracking-wider;
     color: var(--fg-muted);
   }
 

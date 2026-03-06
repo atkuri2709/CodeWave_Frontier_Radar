@@ -10,6 +10,7 @@ from app.api.routes import (
     scheduler,
     logs,
     pipeline_configs,
+    meta,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -26,3 +27,4 @@ api_router.include_router(logs.router, prefix="/logs", tags=["logs"])
 api_router.include_router(
     pipeline_configs.router, prefix="/pipeline-configs", tags=["pipeline-configs"]
 )
+api_router.include_router(meta.router, prefix="/meta", tags=["meta"])

@@ -2,9 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { api, type FindingSummary, type Run } from '@/lib/api';
-
-const AGENT_LABELS: Record<string, string> = { competitors: 'Competitors', model_providers: 'Model Providers', research: 'Research', hf_benchmarks: 'Benchmarks' };
-const AGENT_COLORS: Record<string, string> = { competitors: '#FF6A3D', model_providers: '#9DAAF2', research: '#F4DB7D', hf_benchmarks: '#1A2238' };
+import { useMeta } from '@/lib/useMeta';
 
 function toIST(d: string) { return new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
 function todayIST() { return new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
@@ -65,6 +63,7 @@ export default function AnalyticsPage() {
 
 /* ============== DIFF VIEWER ============== */
 function DiffViewer({ findings }: { findings: FindingSummary[] }) {
+  const { agentLabel } = useMeta();
   const todayFindings = findings.filter(f => isToday(f.created_at));
   const yesterdayFindings = findings.filter(f => isYesterday(f.created_at));
   const yTitles = new Set(yesterdayFindings.map(f => f.title));
@@ -95,7 +94,7 @@ function DiffViewer({ findings }: { findings: FindingSummary[] }) {
                   <a href={f.source_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-[#FF6A3D] line-clamp-1" style={{ color: '#1A2238' }}>{f.title}</a>
                   <p className="line-clamp-1 text-xs" style={{ color: '#9ba2bc' }}>{f.summary_short}</p>
                 </div>
-                <span className="text-[10px] font-medium" style={{ color: '#6b7394' }}>{f.agent_id}</span>
+                <span className="text-[10px] font-medium" style={{ color: '#6b7394' }}>{agentLabel(f.agent_id)}</span>
               </li>
             ))}
           </ul>
@@ -115,7 +114,7 @@ function DiffViewer({ findings }: { findings: FindingSummary[] }) {
                 <div className="min-w-0 flex-1">
                   <span className="text-sm font-medium line-clamp-1 line-through" style={{ color: '#6b7394' }}>{f.title}</span>
                 </div>
-                <span className="text-[10px] font-medium" style={{ color: '#9ba2bc' }}>{f.agent_id}</span>
+                <span className="text-[10px] font-medium" style={{ color: '#9ba2bc' }}>{agentLabel(f.agent_id)}</span>
               </li>
             ))}
           </ul>
@@ -131,31 +130,31 @@ function DiffViewer({ findings }: { findings: FindingSummary[] }) {
 
 /* ============== SOTA WATCH ============== */
 function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[] }) {
-  const benchmarkFindings = findings.filter(f => f.category === 'benchmark' || f.agent_id === 'hf_benchmarks');
+  const { agentLabel, agentIds } = useMeta();
+  const benchmarkFindings = findings.filter(f => f.category === 'benchmark');
   const sortedRuns = [...runs].sort((a, b) => new Date(a.started_at || '').getTime() - new Date(b.started_at || '').getTime());
   const runData = sortedRuns.map(r => ({
     id: r.id,
     date: r.started_at ? new Date(r.started_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', timeZone: 'Asia/Kolkata' }) : `#${r.id}`,
-    benchmarks: r.agent_results?.hf_benchmarks?.count ?? 0,
-    total: r.findings_count,
+    count: r.findings_count,
   }));
-  const maxBenchmarks = Math.max(1, ...runData.map(r => r.benchmarks));
+  const maxCount = Math.max(1, ...runData.map(r => r.count));
 
   return (
     <div className="space-y-5">
       {/* Chart */}
       <div className="glass-card p-5">
-        <h3 className="text-sm font-bold mb-4" style={{ color: '#1A2238' }}>Leaderboard Movement Over Runs</h3>
+        <h3 className="text-sm font-bold mb-4" style={{ color: '#1A2238' }}>Total Findings Over Runs</h3>
         {runData.length === 0 ? (
           <div className="empty-state py-12"><p className="text-sm" style={{ color: '#6b7394' }}>No run data available yet.</p></div>
         ) : (
           <div className="flex items-end gap-2" style={{ height: '180px' }}>
             {runData.map((r, i) => (
               <div key={r.id} className="flex flex-1 flex-col items-center gap-1">
-                <span className="text-[10px] font-bold" style={{ color: '#1A2238' }}>{r.benchmarks}</span>
+                <span className="text-[10px] font-bold" style={{ color: '#1A2238' }}>{r.count}</span>
                 <div className="w-full rounded-t-lg transition-all duration-500" style={{
-                  height: `${Math.max(8, (r.benchmarks / maxBenchmarks) * 140)}px`,
-                  background: r.benchmarks > 0 ? 'linear-gradient(180deg, #FF6A3D, #F4DB7D)' : 'rgba(26,34,56,0.06)',
+                  height: `${Math.max(8, (r.count / maxCount) * 140)}px`,
+                  background: r.count > 0 ? 'linear-gradient(180deg, #FF6A3D, #F4DB7D)' : 'rgba(26,34,56,0.06)',
                   animationDelay: `${i * 0.1}s`,
                 }} />
                 <span className="text-[9px] font-medium" style={{ color: '#9ba2bc' }}>{r.date}</span>
@@ -171,7 +170,7 @@ function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[]
           <h3 className="text-sm font-bold" style={{ color: '#1A2238' }}>SOTA Benchmark Findings ({benchmarkFindings.length})</h3>
         </div>
         {benchmarkFindings.length === 0 ? (
-          <div className="empty-state py-8"><p className="text-xs" style={{ color: '#6b7394' }}>No benchmark findings yet. Add HF leaderboard URLs as sources.</p></div>
+          <div className="empty-state py-8"><p className="text-xs" style={{ color: '#6b7394' }}>No benchmark findings yet. Add leaderboard URLs as sources.</p></div>
         ) : (
           <ul className="divide-y" style={{ '--tw-divide-color': 'rgba(26,34,56,0.04)' } as React.CSSProperties}>
             {benchmarkFindings.map(f => (

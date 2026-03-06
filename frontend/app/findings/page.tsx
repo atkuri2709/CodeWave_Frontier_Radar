@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { api, type FindingSummary } from '@/lib/api';
-
-const AGENTS = [ { value: '', label: 'All Agents' }, { value: 'competitors', label: 'Competitors' }, { value: 'model_providers', label: 'Model Providers' }, { value: 'research', label: 'Research' }, { value: 'hf_benchmarks', label: 'HF Benchmarks' } ];
-const CATEGORIES = [ { value: '', label: 'All Categories' }, { value: 'release', label: 'Release' }, { value: 'research', label: 'Research' }, { value: 'benchmark', label: 'Benchmark' } ];
-const AGENT_BADGE: Record<string, string> = { competitors: 'agent-orange', model_providers: 'agent-lavender', research: 'agent-gold', hf_benchmarks: 'agent-navy' };
+import { useMeta } from '@/lib/useMeta';
 
 function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
@@ -22,6 +19,10 @@ function isToday(d: string) { return toIST(d) === todayIST(); }
 function isYesterday(d: string) { return toIST(d) === yesterdayIST(); }
 
 export default function FindingsPage() {
+  const { agents, categories, agentBadge, agentLabel } = useMeta();
+  const AGENTS = [{ value: '', label: 'All Agents' }, ...agents.map(a => ({ value: a.id, label: a.label }))];
+  const CATEGORIES = [{ value: '', label: 'All Categories' }, ...categories.map(c => ({ value: c.id, label: c.label }))];
+
   const [findings, setFindings] = useState<FindingSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [agentFilter, setAgentFilter] = useState('');
@@ -77,7 +78,7 @@ export default function FindingsPage() {
         </div>
         <p className="mt-1 line-clamp-2 text-xs leading-relaxed" style={{ color: '#6b7394' }}>{f.summary_short}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className={`px-1.5 py-0.5 text-[10px] font-bold ${AGENT_BADGE[f.agent_id] || 'badge-zinc'}`}>{f.agent_id}</span>
+          <span className={`px-1.5 py-0.5 text-[10px] font-bold ${agentBadge(f.agent_id)}`}>{agentLabel(f.agent_id)}</span>
           <span className="rounded-lg px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(26,34,56,0.05)', color: '#6b7394' }}>{f.category}</span>
           {f.publisher && <span className="rounded-lg px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(157,170,242,0.08)', color: '#4c5aad' }}>{f.publisher}</span>}
           <ConfidenceBadge value={f.confidence} />

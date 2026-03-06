@@ -109,6 +109,14 @@ class PipelineConfigCreate(BaseModel):
     pipeline_name: str = Field(..., min_length=1, max_length=256)
     pipeline_description: Optional[str] = None
     config_json: Optional[Dict[str, Any]] = None
+    enabled: bool = True
+
+
+class PipelineConfigUpdate(BaseModel):
+    pipeline_name: Optional[str] = Field(default=None, min_length=1, max_length=256)
+    pipeline_description: Optional[str] = None
+    config_json: Optional[Dict[str, Any]] = None
+    enabled: Optional[bool] = None
 
 
 class PipelineConfigOut(BaseModel):
@@ -116,6 +124,7 @@ class PipelineConfigOut(BaseModel):
     pipeline_name: str
     pipeline_description: Optional[str] = None
     config_json: Optional[Dict[str, Any]] = None
+    enabled: bool = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

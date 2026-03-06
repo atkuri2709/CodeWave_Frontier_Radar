@@ -29,6 +29,7 @@ export interface PipelineConfig {
   pipeline_name: string;
   pipeline_description: string | null;
   config_json: Record<string, unknown> | null;
+  enabled: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -103,6 +104,24 @@ export interface LogEntry {
   message: string;
 }
 
+export interface AgentMeta {
+  id: string;
+  label: string;
+  badge: string;
+  color: string;
+  description: string;
+}
+
+export interface CategoryMeta {
+  id: string;
+  label: string;
+}
+
+export interface AppMeta {
+  agents: AgentMeta[];
+  categories: CategoryMeta[];
+}
+
 export const api = {
   runs: {
     list: () => fetchApi<Run[]>('/runs/'),
@@ -157,10 +176,17 @@ export const api = {
     get: (id: number) => fetchApi<PipelineConfig>(`/pipeline-configs/${id}`),
     create: (body: { pipeline_name: string; pipeline_description?: string; config_json?: Record<string, unknown> }) =>
       fetchApi<PipelineConfig>('/pipeline-configs/', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: number, body: Partial<PipelineConfig>) =>
+      fetchApi<PipelineConfig>(`/pipeline-configs/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
     delete: (id: number) => fetchApi<{ ok: boolean }>(`/pipeline-configs/${id}`, { method: 'DELETE' }),
   },
   logs: {
     forRun: (runId: number) => fetchApi<LogEntry[]>(`/logs/${runId}`),
+  },
+  meta: {
+    get: () => fetchApi<AppMeta>('/meta/'),
+    agents: () => fetchApi<AgentMeta[]>('/meta/agents'),
+    categories: () => fetchApi<CategoryMeta[]>('/meta/categories'),
   },
   scheduler: {
     list: () => fetchApi<ScheduledJob[]>('/scheduler/'),

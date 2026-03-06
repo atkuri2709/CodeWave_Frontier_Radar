@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { api, type ScheduledJob, type SchedulerStatus, type PipelineConfig } from '@/lib/api';
+import { api, type ScheduledJob, type SchedulerStatus, type PipelineConfig, type Run } from '@/lib/api';
 import { useToast } from '../components/Toast';
 
 const TIMEZONES = [
@@ -34,6 +34,7 @@ export default function SchedulerPage() {
   const [pipelines, setPipelines] = useState<PipelineConfig[]>([]);
   const [pipelineNames, setPipelineNames] = useState<string[]>([]);
   const [status, setStatus] = useState<SchedulerStatus | null>(null);
+  const [runs, setRuns] = useState<Run[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState<ScheduledJob | null>(null);
@@ -54,22 +55,61 @@ export default function SchedulerPage() {
   const toast = useToast();
 
   const refresh = useCallback(async () => {
-    const [j, s, pcs, names] = await Promise.all([
+    const [j, s, pcs, r] = await Promise.all([
       api.scheduler.list(),
       api.scheduler.status(),
       api.pipelineConfigs.list().catch(() => []),
-      api.runs.pipelineNames().catch(() => []),
+      api.runs.list().catch(() => []),
     ]);
     setJobs(j);
     setStatus(s);
     setPipelines(pcs);
-    const allNames = new Set([...names, ...pcs.map(p => p.pipeline_name)]);
-    setPipelineNames(Array.from(allNames).sort());
+    setRuns(r);
+    const configNames = pcs.map(p => p.pipeline_name);
+    setPipelineNames(configNames.sort());
   }, []);
 
   useEffect(() => {
     refresh().catch(() => {}).finally(() => setLoading(false));
   }, [refresh]);
+
+  const hasRunningJobs = runs.some(r => r.status === 'running' || r.status === 'pending');
+  useEffect(() => {
+    if (!hasRunningJobs) return;
+    const interval = setInterval(() => { refresh().catch(() => {}); }, 5000);
+    return () => clearInterval(interval);
+  }, [hasRunningJobs, refresh]);
+
+  const getLatestRun = (pipelineName: string): Run | undefined => {
+    return runs.find(r => r.pipeline_name === pipelineName);
+  };
+
+  const formatRunTime = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
+  };
+
+  const runStatusBadge = (status: string) => {
+    switch (status) {
+      case 'success': return 'badge-emerald';
+      case 'running': return 'badge-amber';
+      case 'pending': return 'badge-amber';
+      case 'failed': return 'badge-red';
+      case 'partial': return 'badge-red';
+      default: return 'badge-zinc';
+    }
+  };
+
+  const runStatusLabel = (status: string) => {
+    switch (status) {
+      case 'success': return 'Completed';
+      case 'running': return 'In Progress';
+      case 'pending': return 'Pending';
+      case 'failed': return 'Failed';
+      case 'partial': return 'Partial';
+      default: return status;
+    }
+  };
 
   const resetForm = () => {
     setFormPipeline('');
@@ -147,11 +187,22 @@ export default function SchedulerPage() {
   };
 
   const handleToggle = async (job: ScheduledJob) => {
+    const newEnabled = !job.enabled;
+    setJobs(prev => prev.map(j => j.id === job.id ? { ...j, enabled: newEnabled } : j));
+    if (status) {
+      const enabledCount = jobs.filter(j => j.id === job.id ? newEnabled : j.enabled).length;
+      setStatus({ ...status, running: enabledCount > 0, job_count: enabledCount });
+    }
     try {
-      await api.scheduler.update(job.id, { enabled: !job.enabled });
+      await api.scheduler.update(job.id, { enabled: newEnabled });
+      toast.show(`${job.scheduler_name} ${newEnabled ? 'enabled' : 'disabled'}`, 'success');
+      await new Promise(r => setTimeout(r, 800));
       await refresh();
-      toast.show(`${job.scheduler_name} ${!job.enabled ? 'enabled' : 'disabled'}`, 'success');
-    } catch { toast.show('Failed to toggle', 'error'); }
+    } catch {
+      setJobs(prev => prev.map(j => j.id === job.id ? { ...j, enabled: !newEnabled } : j));
+      if (status) await refresh();
+      toast.show('Failed to toggle', 'error');
+    }
   };
 
   const formatSchedule = (job: ScheduledJob) => {
@@ -214,7 +265,7 @@ export default function SchedulerPage() {
                   type="text"
                   value={formPipeline}
                   onChange={e => setFormPipeline(e.target.value)}
-                  placeholder="e.g. sanju_reacher"
+                  placeholder=""
                   className="w-full rounded-xl border px-3 py-2 text-sm"
                   style={inputStyle}
                 />
@@ -384,19 +435,31 @@ export default function SchedulerPage() {
         <div className="stagger-children space-y-3">
           {jobs.map(job => {
             const nextRun = status?.jobs.find(j => j.id === _jobId(job.scheduler_name));
+            const latestRun = getLatestRun(job.pipeline_name);
+            const isRunning = latestRun?.status === 'running' || latestRun?.status === 'pending';
             return (
               <div key={job.id} className={`glass-card overflow-hidden ${!job.enabled ? 'opacity-60' : ''}`}>
                 <div className="flex items-center gap-4 px-5 py-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: job.enabled ? 'rgba(16,185,129,0.08)' : 'rgba(26,34,56,0.04)' }}>
-                    <svg className="h-5 w-5" style={{ color: job.enabled ? '#059669' : '#9ba2bc' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: isRunning ? 'rgba(245,158,11,0.1)' : job.enabled ? 'rgba(16,185,129,0.08)' : 'rgba(26,34,56,0.04)' }}>
+                    {isRunning ? (
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+                    ) : (
+                      <svg className="h-5 w-5" style={{ color: job.enabled ? '#059669' : '#9ba2bc' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold" style={{ color: '#1A2238' }}>{job.scheduler_name}</span>
                       <span className={`badge ${job.enabled ? 'badge-emerald' : 'badge-zinc'}`}>{job.enabled ? 'Active' : 'Disabled'}</span>
                       <span className={`badge ${FREQ_BADGE[job.frequency] || 'badge-zinc'}`}>{FREQ_LABEL[job.frequency] || job.frequency}</span>
+                      {latestRun && (
+                        <span className={`badge ${runStatusBadge(latestRun.status)}`}>
+                          {isRunning && <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse-dot" />}
+                          {runStatusLabel(latestRun.status)}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-xs" style={{ color: '#6b7394' }}>
                       <span>Pipeline: <strong>{job.pipeline_name}</strong></span>
@@ -414,11 +477,31 @@ export default function SchedulerPage() {
                           <span>Until: {[job.end_date, job.end_time].filter(Boolean).join(' ')}</span>
                         </>
                       )}
+                    </div>
+                    {/* Run status & next schedule row */}
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                      {latestRun && (
+                        <span className="flex items-center gap-1.5 rounded-lg px-2 py-1" style={{
+                          background: latestRun.status === 'success' ? 'rgba(16,185,129,0.08)' : latestRun.status === 'running' || latestRun.status === 'pending' ? 'rgba(245,158,11,0.08)' : latestRun.status === 'failed' ? 'rgba(220,38,38,0.06)' : 'rgba(26,34,56,0.04)',
+                          color: latestRun.status === 'success' ? '#059669' : latestRun.status === 'running' || latestRun.status === 'pending' ? '#d97706' : latestRun.status === 'failed' ? '#dc2626' : '#6b7394',
+                        }}>
+                          {latestRun.status === 'success' && <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
+                          {isRunning && <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse-dot" />}
+                          {latestRun.status === 'failed' && <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>}
+                          Last run: {runStatusLabel(latestRun.status)}
+                          {latestRun.finished_at && ` at ${formatRunTime(latestRun.finished_at)}`}
+                          {isRunning && latestRun.started_at && ` (started ${formatRunTime(latestRun.started_at)})`}
+                          {latestRun.status === 'success' && ` — ${latestRun.findings_count} findings`}
+                        </span>
+                      )}
                       {nextRun?.next_run && (
-                        <>
-                          <span style={{ color: '#d0d3de' }}>&middot;</span>
-                          <span className="text-emerald-600 font-medium">Next: {new Date(nextRun.next_run).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Kolkata' })}</span>
-                        </>
+                        <span className="flex items-center gap-1.5 rounded-lg px-2 py-1" style={{ background: 'rgba(157,170,242,0.08)', color: '#4c5aad' }}>
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Next run: {new Date(nextRun.next_run).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' })}
+                        </span>
+                      )}
+                      {!latestRun && !nextRun?.next_run && (
+                        <span className="text-xs" style={{ color: '#9ba2bc' }}>No runs yet</span>
                       )}
                     </div>
                   </div>
