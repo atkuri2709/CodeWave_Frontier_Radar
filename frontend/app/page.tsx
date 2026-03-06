@@ -9,10 +9,11 @@ import { useMeta } from '@/lib/useMeta';
 
 function ConfidencePill({ value }: { value: number }) {
   const pct = Math.round(value * 100);
+  const pts = value.toFixed(2);
   const color = value >= 0.75 ? 'text-emerald-600' : value >= 0.55 ? 'text-amber-600' : value >= 0.35 ? 'text-orange-600' : 'text-red-600';
   const bg = value >= 0.75 ? 'bg-emerald-500' : value >= 0.55 ? 'bg-amber-500' : value >= 0.35 ? 'bg-orange-500' : 'bg-red-500';
   const label = value >= 0.75 ? 'High' : value >= 0.55 ? 'Medium' : value >= 0.35 ? 'Low' : 'Very Low';
-  return (<span className={`flex items-center gap-2 text-xs font-medium ${color}`}><span className="confidence-meter"><span className={`confidence-fill ${bg}`} style={{ width: `${pct}%` }} /></span>{pct}% {label}</span>);
+  return (<span className={`flex items-center gap-2 text-xs font-medium ${color}`}><span className="confidence-meter"><span className={`confidence-fill ${bg}`} style={{ width: `${pct}%` }} /></span>{pts} {label}</span>);
 }
 
 type RunMode = null | 'menu' | 'pipeline' | 'yaml-confirm' | 'json';
@@ -410,6 +411,9 @@ export default function DashboardPage() {
                           <span className={`px-1.5 py-0.5 text-[10px] font-bold ${agentBadge(f.agent_id)}`}>{agentLabel(f.agent_id)}</span>
                           <span className="rounded-lg px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(26,34,56,0.05)', color: '#6b7394' }}>{f.category}</span>
                           <ConfidencePill value={f.confidence} />
+                          {f.impact_score != null && (
+                            <span className="rounded-lg px-1.5 py-0.5 text-[10px] font-bold" style={{ background: 'rgba(244,219,125,0.15)', color: '#b8860b' }}>Impact {f.impact_score.toFixed(2)}</span>
+                          )}
                         </div>
                       </div>
                     </a>

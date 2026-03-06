@@ -228,7 +228,10 @@ function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[]
                     <span className="text-sm font-medium line-clamp-1 hover:text-[#FF6A3D]" style={{ color: '#1A2238' }}>{f.title}</span>
                     <p className="line-clamp-1 text-xs" style={{ color: '#6b7394' }}>{f.summary_short}</p>
                   </div>
-                  <span className="shrink-0 text-[10px] font-bold" style={{ color: '#FF6A3D' }}>{Math.round(f.confidence * 100)}%</span>
+                  <div className="flex shrink-0 flex-col items-end gap-0.5">
+                    <span className="text-[10px] font-bold" style={{ color: '#FF6A3D' }}>{f.confidence.toFixed(2)}</span>
+                    {f.impact_score != null && <span className="text-[9px] font-bold" style={{ color: '#b8860b' }}>Impact {f.impact_score.toFixed(2)}</span>}
+                  </div>
                 </a>
               </li>
             ))}
