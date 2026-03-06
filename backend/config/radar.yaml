@@ -15,21 +15,24 @@ agents:
         - https://deepmind.google/blog/
       rss_feeds: []
       keywords: [release, model, Gemini, AlphaFold, API, benchmark]
-    # - name: Mistral AI
-    #   release_urls:
-    #     - https://mistral.ai/news/
-    #   rss_feeds: []
-    #   keywords: [release, model, open-source, Mixtral, API, pricing]
-    # - name: Stability AI
-    #   release_urls:
-    #     - https://stability.ai/news
-    #   rss_feeds: []
-    #   keywords: [release, model, Stable Diffusion, image, video, API]
-    # - name: Cohere
-    #   release_urls:
-    #     - https://cohere.com/blog
-    #   rss_feeds: []
-    #   keywords: [release, model, embed, rerank, API, enterprise]
+
+    - name: Mistral AI
+      release_urls:
+        - https://mistral.ai/news/
+      rss_feeds: []
+      keywords: [release, model, Mixtral, open-source, API, benchmark]
+
+    - name: Stability AI
+      release_urls:
+        - https://stability.ai/news
+      rss_feeds: []
+      keywords: [release, model, Stable Diffusion, image, video, benchmark]
+
+    - name: Cohere
+      release_urls:
+        - https://cohere.com/blog
+      rss_feeds: []
+      keywords: [release, model, embed, rerank, API, enterprise]
 
   model_providers:
     - name: Anthropic
@@ -37,31 +40,37 @@ agents:
         - https://www.anthropic.com/news
       rss_feeds: []
       focus: [models, Claude, api, safety, pricing]
-    # - name: Google AI
-    #   urls:
-    #     - https://blog.google/technology/ai/
-    #   rss_feeds: []
-    #   focus: [Gemini, models, api, Vertex, safety]
-    # - name: Microsoft AI
-    #   urls:
-    #     - https://blogs.microsoft.com/ai/
-    #   rss_feeds: []
-    #   focus: [Copilot, Azure, models, api, GPT]
-    # - name: Hugging Face
-    #   urls:
-    #     - https://huggingface.co/blog
-    #   rss_feeds: []
-    #   focus: [models, open-source, transformers, leaderboard, datasets]
+
+    - name: Google AI
+      urls:
+        - https://blog.google/technology/ai/
+      rss_feeds: []
+      focus: [Gemini, models, api, Vertex, safety]
+
+    - name: Microsoft AI
+      urls:
+        - https://blogs.microsoft.com/ai/
+      rss_feeds: []
+      focus: [Copilot, Azure, models, api, GPT]
+
+    - name: Hugging Face
+      urls:
+        - https://huggingface.co/blog
+      rss_feeds: []
+      focus: [models, open-source, transformers, leaderboard, datasets]
 
   research:
     disable_arxiv: false
     arxiv_categories: [cs.CL, cs.LG, stat.ML]
     relevance_keywords: [benchmark, eval, agent, multimodal, safety, alignment, llm, transformer]
     curated_urls:
-      - https://techcrunch.com/category/artificial-intelligence/
-      - https://www.theverge.com/ai-artificial-intelligence
+      - https://arxiv.org/list/cs.CL/recent
+      - https://arxiv.org/list/cs.LG/recent
+      - https://arxiv.org/list/stat.ML/recent
+      - https://huggingface.co/papers
+      - https://paperswithcode.com/latest
 
   hf_benchmarks:
-    leaderboards: [open_llm_leaderboard]
-    tasks: []
+    leaderboards: [open_llm_leaderboard, chatbot_arena]
+    tasks: [mmlu, gsm8k, humaneval]
     track_new_sota: true
