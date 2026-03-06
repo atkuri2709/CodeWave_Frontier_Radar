@@ -7,8 +7,8 @@ import { useToast } from '../components/Toast';
 const AGENT_OPTIONS = [ { value: 'competitors', label: 'Competitors' }, { value: 'model_providers', label: 'Model Providers' }, { value: 'research', label: 'Research' }, { value: 'hf_benchmarks', label: 'HF Benchmarks' } ] as const;
 const AGENT_BADGE: Record<string, string> = { competitors: 'agent-orange', model_providers: 'agent-lavender', research: 'agent-gold', hf_benchmarks: 'agent-navy' };
 
-interface FormState { pipeline_name: string; pipeline_description: string; url: string; agent_id: string; name: string; rate_limit: string; include_rules: string; exclude_rules: string }
-const emptyForm: FormState = { pipeline_name: '', pipeline_description: '', url: '', agent_id: 'competitors', name: '', rate_limit: '', include_rules: '', exclude_rules: '' };
+interface FormState { pipeline_name: string; pipeline_description: string; url: string; agent_id: string; name: string }
+const emptyForm: FormState = { pipeline_name: '', pipeline_description: '', url: '', agent_id: 'competitors', name: '' };
 
 export default function SourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
@@ -27,9 +27,6 @@ export default function SourcesPage() {
     setForm({
       pipeline_name: '', pipeline_description: '',
       url: s.url, agent_id: s.agent_id, name: s.name || '',
-      rate_limit: s.rate_limit != null ? String(s.rate_limit) : '',
-      include_rules: (s.include_rules || []).join(', '),
-      exclude_rules: (s.exclude_rules || []).join(', '),
     });
     setEditingId(s.id);
     setShowForm(true);
@@ -37,16 +34,21 @@ export default function SourcesPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const rateLimit = form.rate_limit ? parseFloat(form.rate_limit) : undefined;
-    const includeRules = form.include_rules ? form.include_rules.split(',').map(s => s.trim()).filter(Boolean) : [];
-    const excludeRules = form.exclude_rules ? form.exclude_rules.split(',').map(s => s.trim()).filter(Boolean) : [];
+    if (!editingId && !form.pipeline_name.trim()) {
+      toast.show('Pipeline Name is required.', 'error');
+      return;
+    }
+    if (!form.url.trim()) {
+      toast.show('URLs are required.', 'error');
+      return;
+    }
     try {
       if (editingId) {
-        await api.sources.update(editingId, { name: form.name || undefined, rate_limit: rateLimit as any, include_rules: includeRules as any, exclude_rules: excludeRules as any });
-        toast.show('Feed updated!', 'success');
+        await api.sources.update(editingId, { name: form.name || undefined });
+        toast.show('Pipeline updated!', 'success');
       } else {
         const urlCount = form.url.split(',').map(u => u.trim()).filter(Boolean).length;
-        await api.sources.create({ url: form.url, agent_id: form.agent_id, name: form.name || undefined, rate_limit: rateLimit as any, include_rules: includeRules as any, exclude_rules: excludeRules as any });
+        await api.sources.create({ url: form.url, agent_id: form.agent_id, name: form.name || undefined });
 
         if (form.pipeline_name.trim()) {
           await api.pipelineConfigs.create({
@@ -54,7 +56,7 @@ export default function SourcesPage() {
             pipeline_description: form.pipeline_description.trim() || undefined,
           });
         }
-        toast.show(`Pipeline feed added with ${urlCount} URL${urlCount > 1 ? 's' : ''}!`, 'success');
+        toast.show(`Pipeline added with ${urlCount} URL${urlCount > 1 ? 's' : ''}!`, 'success');
       }
       resetForm();
       setSources(await api.sources.list());
@@ -62,15 +64,15 @@ export default function SourcesPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('Remove this feed from the pipeline?')) return;
+    if (!confirm('Remove this pipeline source?')) return;
     setDeletingId(id);
-    try { await api.sources.delete(id); setSources(await api.sources.list()); toast.show('Feed removed.', 'info'); }
+    try { await api.sources.delete(id); setSources(await api.sources.list()); toast.show('Pipeline source removed.', 'info'); }
     catch { toast.show('Failed to remove.', 'error'); }
     finally { setDeletingId(null); }
   };
 
   const toggleEnabled = async (s: Source) => {
-    try { await api.sources.update(s.id, { enabled: !s.enabled }); setSources(await api.sources.list()); toast.show(`Feed ${!s.enabled ? 'enabled' : 'disabled'}.`, 'info'); }
+    try { await api.sources.update(s.id, { enabled: !s.enabled }); setSources(await api.sources.list()); toast.show(`Pipeline ${!s.enabled ? 'enabled' : 'disabled'}.`, 'info'); }
     catch { toast.show('Failed to toggle.', 'error'); }
   };
 
@@ -79,22 +81,22 @@ export default function SourcesPage() {
       <div className="page-header relative">
         <div className="absolute inset-0 overflow-hidden rounded-2xl"><div className="absolute -top-16 -right-16 h-48 w-48 opacity-20" style={{ background: 'radial-gradient(circle, rgba(157,170,242,0.5) 0%, transparent 60%)' }} /></div>
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><h1>Intelligence Pipeline</h1><p>Configure the feeds powering your pipeline — blogs, changelogs, RSS, leaderboards. Set agent types, rate limits, and filtering rules.</p></div>
+          <div><h1>Intelligence Pipeline</h1><p>Configure the pipelines powering your intelligence — blogs, changelogs, RSS, leaderboards. Set agent types and URLs.</p></div>
           <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="btn-primary shrink-0">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>Add Feed
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>Add Pipeline
           </button>
         </div>
       </div>
 
       {showForm && (
         <form onSubmit={submit} className="glass-card animate-slide-up space-y-5 p-6">
-          <h2 className="text-base font-bold" style={{ color: '#1A2238' }}>{editingId ? 'Edit Feed' : 'New Pipeline Feed'}</h2>
+          <h2 className="text-base font-bold" style={{ color: '#1A2238' }}>{editingId ? 'Edit Pipeline' : 'New Pipeline'}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {!editingId && (
               <>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Name</label>
-                  <input type="text" placeholder="e.g. Morning Intelligence Sweep" value={form.pipeline_name} onChange={e => setForm({...form, pipeline_name: e.target.value})} className="input-field" />
+                  <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Name <span className="text-red-500">*</span></label>
+                  <input type="text" placeholder="e.g. Morning Intelligence Sweep" required value={form.pipeline_name} onChange={e => setForm({...form, pipeline_name: e.target.value})} className="input-field" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Description</label>
@@ -104,7 +106,7 @@ export default function SourcesPage() {
             )}
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>
-                URLs <span className="font-normal text-[10px]">(separate multiple URLs with commas)</span>
+                URLs <span className="text-red-500">*</span> <span className="font-normal text-[10px]">(separate multiple URLs with commas)</span>
               </label>
               <textarea
                 placeholder={"https://openai.com/blog, https://deepmind.google/blog, https://anthropic.com/news"}
@@ -132,21 +134,9 @@ export default function SourcesPage() {
                 {AGENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Rate Limit <span className="font-normal">(seconds between requests)</span></label>
-              <input type="number" step="0.1" min="0" placeholder="e.g. 2.0" value={form.rate_limit} onChange={e => setForm({...form, rate_limit: e.target.value})} className="input-field" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Include Rules <span className="font-normal">(comma-separated keywords)</span></label>
-              <input type="text" placeholder="e.g. release, model, API" value={form.include_rules} onChange={e => setForm({...form, include_rules: e.target.value})} className="input-field" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Exclude Rules <span className="font-normal">(comma-separated keywords to skip)</span></label>
-              <input type="text" placeholder="e.g. careers, jobs, press" value={form.exclude_rules} onChange={e => setForm({...form, exclude_rules: e.target.value})} className="input-field" />
-            </div>
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="submit" className="btn-primary">{editingId ? 'Update Feed' : 'Save Feed'}</button>
+            <button type="submit" className="btn-primary">{editingId ? 'Update Pipeline' : 'Save Pipeline'}</button>
             <button type="button" onClick={resetForm} className="btn-ghost">Cancel</button>
           </div>
         </form>
@@ -155,9 +145,9 @@ export default function SourcesPage() {
       {loading ? <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-20 skeleton" />)}</div> : sources.length === 0 ? (
         <div className="glass-card"><div className="empty-state">
           <div className="empty-state-icon"><svg className="h-6 w-6" style={{ color: '#9DAAF2' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.915-3.373a4.5 4.5 0 00-6.364-6.364L4.5 8.25" /></svg></div>
-          <p className="text-sm font-semibold" style={{ color: '#3d4660' }}>No feeds configured</p>
+          <p className="text-sm font-semibold" style={{ color: '#3d4660' }}>No pipelines configured</p>
           <p className="text-xs" style={{ color: '#6b7394' }}>Add URLs to power your intelligence pipeline.</p>
-          <button onClick={() => setShowForm(true)} className="btn-primary mt-3"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>Add Feed</button>
+          <button onClick={() => setShowForm(true)} className="btn-primary mt-3"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>Add Pipeline</button>
         </div></div>
       ) : (
         <div className="stagger-children space-y-3">
@@ -185,13 +175,6 @@ export default function SourcesPage() {
                 <button onClick={() => startEdit(s)} className="btn-ghost text-xs">Edit</button>
                 <button onClick={() => remove(s.id)} disabled={deletingId === s.id} className="btn-danger text-xs">{deletingId === s.id ? '...' : 'Delete'}</button>
               </div>
-              {(s.rate_limit != null || (s.include_rules?.length > 0) || (s.exclude_rules?.length > 0)) && (
-                <div className="mt-3 flex flex-wrap gap-2 pl-14">
-                  {s.rate_limit != null && <span className="badge badge-zinc">Rate: {s.rate_limit}s</span>}
-                  {s.include_rules?.map((r, i) => <span key={`in-${i}`} className="badge badge-emerald">+{r}</span>)}
-                  {s.exclude_rules?.map((r, i) => <span key={`ex-${i}`} className="badge badge-red">-{r}</span>)}
-                </div>
-              )}
             </div>
           ))}
         </div>
