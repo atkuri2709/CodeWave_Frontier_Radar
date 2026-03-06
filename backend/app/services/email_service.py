@@ -1,4 +1,13 @@
-"""Email delivery with PDF attachment, inline highlights, and retry with backoff."""
+"""Email delivery with PDF attachment, inline highlights, and retry with backoff.
+
+Supports two providers:
+  1. SMTP (primary) — uses smtp_host/smtp_user/smtp_password
+  2. Mailgun API (fallback) — uses mailgun_api_key/mailgun_domain
+
+If SMTP is configured, it is tried first. If it fails (e.g. port blocked on
+cloud hosting), Mailgun is used as a fallback. If only Mailgun is configured,
+it is used directly.
+"""
 
 import asyncio
 import logging
@@ -9,6 +18,8 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from typing import List, Optional
 
+import httpx
+
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -17,12 +28,22 @@ MAX_RETRIES = 3
 BACKOFF_BASE = 2.0
 BACKOFF_MAX = 30.0
 
+MAILGUN_API_URL = "https://api.mailgun.net/v3/{domain}/messages"
+
 
 class EmailService:
-    """Send digest email via SMTP with retries."""
+    """Send digest email via SMTP or Mailgun with automatic fallback."""
 
     def __init__(self):
         self.settings = get_settings()
+
+    @property
+    def _smtp_configured(self) -> bool:
+        return bool(self.settings.smtp_host and self.settings.smtp_user)
+
+    @property
+    def _mailgun_configured(self) -> bool:
+        return bool(self.settings.mailgun_api_key and self.settings.mailgun_domain)
 
     async def send_digest(
         self,
@@ -36,17 +57,24 @@ class EmailService:
         if not recipients:
             logger.warning("No recipients configured")
             return False
-        if self.settings.smtp_host and self.settings.smtp_user:
-            return await self._send_smtp_with_retry(
-                recipients,
-                subject,
-                body_plain,
-                body_html,
-                pdf_path,
-                attachment_filename,
+
+        if self._smtp_configured:
+            ok = await self._send_smtp_with_retry(
+                recipients, subject, body_plain, body_html, pdf_path, attachment_filename
             )
-        logger.warning("Email not configured (no SMTP). Skipping send.")
+            if ok:
+                return True
+            logger.warning("SMTP failed; attempting Mailgun fallback...")
+
+        if self._mailgun_configured:
+            return await self._send_mailgun_with_retry(
+                recipients, subject, body_plain, body_html, pdf_path, attachment_filename
+            )
+
+        logger.warning("Email not configured (no SMTP or Mailgun). Skipping send.")
         return False
+
+    # ── SMTP ──────────────────────────────────────────────────────────
 
     async def _send_smtp_with_retry(
         self,
@@ -85,13 +113,12 @@ class EmailService:
                     )
                     server.sendmail(msg["From"], recipients, msg.as_string())
 
-                logger.info("Digest email sent to %s", recipients)
+                logger.info("Digest email sent via SMTP to %s", recipients)
                 return True
 
             except smtplib.SMTPAuthenticationError:
                 logger.warning(
-                    "Gmail rejected login (535). Use an App Password, not your normal password. "
-                    "See backend/EMAIL_SETUP.md or https://support.google.com/mail/?p=BadCredentials"
+                    "Gmail rejected login (535). Use an App Password, not your normal password."
                 )
                 return False
 
@@ -105,7 +132,7 @@ class EmailService:
                 if attempt < MAX_RETRIES:
                     wait = min(BACKOFF_MAX, BACKOFF_BASE ** (attempt + 1))
                     logger.info(
-                        "Email send failed (%s), retry %d/%d in %.1fs",
+                        "SMTP send failed (%s), retry %d/%d in %.1fs",
                         type(e).__name__,
                         attempt + 1,
                         MAX_RETRIES,
@@ -113,7 +140,7 @@ class EmailService:
                     )
                     await asyncio.sleep(wait)
                     continue
-                logger.warning("Email send failed after %d retries: %s", MAX_RETRIES, e)
+                logger.warning("SMTP send failed after %d retries: %s", MAX_RETRIES, e)
                 return False
 
             except Exception as e:
@@ -121,5 +148,83 @@ class EmailService:
                 return False
 
         if last_error:
-            logger.warning("Email send exhausted retries: %s", last_error)
+            logger.warning("SMTP send exhausted retries: %s", last_error)
+        return False
+
+    # ── Mailgun ───────────────────────────────────────────────────────
+
+    async def _send_mailgun_with_retry(
+        self,
+        recipients: List[str],
+        subject: str,
+        body_plain: str,
+        body_html: str,
+        pdf_path: Optional[Path] = None,
+        attachment_filename: Optional[str] = None,
+    ) -> bool:
+        url = MAILGUN_API_URL.format(domain=self.settings.mailgun_domain)
+        sender = (
+            self.settings.mailgun_from
+            or f"Frontier AI Radar <radar@{self.settings.mailgun_domain}>"
+        )
+
+        last_error: Optional[Exception] = None
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                data = {
+                    "from": sender,
+                    "to": recipients,
+                    "subject": subject,
+                    "text": body_plain,
+                    "html": body_html,
+                }
+
+                files = []
+                if pdf_path and Path(pdf_path).exists():
+                    name = attachment_filename or Path(pdf_path).name
+                    files.append(
+                        ("attachment", (name, open(pdf_path, "rb"), "application/pdf"))
+                    )
+
+                async with httpx.AsyncClient(timeout=30) as client:
+                    resp = await client.post(
+                        url,
+                        auth=("api", self.settings.mailgun_api_key),
+                        data=data,
+                        files=files if files else None,
+                    )
+
+                for _, fobj in files:
+                    fobj[1].close()
+
+                if resp.status_code == 200:
+                    logger.info("Digest email sent via Mailgun to %s", recipients)
+                    return True
+                else:
+                    raise httpx.HTTPStatusError(
+                        f"Mailgun returned {resp.status_code}: {resp.text}",
+                        request=resp.request,
+                        response=resp,
+                    )
+
+            except Exception as e:
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    wait = min(BACKOFF_MAX, BACKOFF_BASE ** (attempt + 1))
+                    logger.info(
+                        "Mailgun send failed (%s), retry %d/%d in %.1fs",
+                        type(e).__name__,
+                        attempt + 1,
+                        MAX_RETRIES,
+                        wait,
+                    )
+                    await asyncio.sleep(wait)
+                    continue
+                logger.warning(
+                    "Mailgun send failed after %d retries: %s", MAX_RETRIES, e
+                )
+                return False
+
+        if last_error:
+            logger.warning("Mailgun send exhausted retries: %s", last_error)
         return False

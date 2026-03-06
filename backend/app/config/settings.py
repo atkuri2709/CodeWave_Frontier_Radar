@@ -62,13 +62,18 @@ class Settings(BaseSettings):
     # Run manager: max agents running at once (2 = less concurrent summarization load)
     agent_max_concurrent: int = 2
 
-    # Email
+    # Email — SMTP (primary) or Mailgun (fallback)
     smtp_host: Optional[str] = None
     smtp_port: int = 587
     smtp_user: Optional[str] = None
     smtp_password: Optional[str] = None
     smtp_from: Optional[str] = None
     email_recipients: List[str] = Field(default_factory=list)
+
+    # Mailgun (used when SMTP fails or isn't configured)
+    mailgun_api_key: Optional[str] = None
+    mailgun_domain: Optional[str] = None
+    mailgun_from: Optional[str] = None
 
     # Storage (optional S3; local for hackathon)
     storage_backend: str = "local"
