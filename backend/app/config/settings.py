@@ -81,7 +81,9 @@ class Settings(BaseSettings):
     dashboard_base_url: str = "http://localhost:3000"
 
     # CORS
-    cors_origins: List[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: List[str] = Field(
+        default_factory=lambda: ["http://localhost:3000", "*"]
+    )
 
 
 @lru_cache

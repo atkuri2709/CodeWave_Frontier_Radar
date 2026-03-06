@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
   async rewrites() {
-    return [{ source: '/api/proxy/:path*', destination: 'http://localhost:8000/api/:path*' }];
+    return process.env.NODE_ENV === 'development'
+      ? [{ source: '/api/proxy/:path*', destination: 'http://localhost:8000/api/:path*' }]
+      : [];
   },
 };
 
