@@ -36,6 +36,7 @@ export interface PipelineConfig {
 
 export interface Source {
   id: number;
+  pipeline_id: number | null;
   url: string;
   agent_id: string;
   name: string | null;
@@ -141,9 +142,17 @@ export const api = {
     pipelineNames: () => fetchApi<string[]>('/runs/pipeline-names'),
   },
   sources: {
-    list: (agent_id?: string) => fetchApi<Source[]>(agent_id ? `/sources/?agent_id=${agent_id}` : '/sources/'),
-    create: (body: Partial<Source> & { url: string; agent_id: string }) =>
+    list: (filters?: { agent_id?: string; pipeline_id?: number }) => {
+      const q = new URLSearchParams();
+      if (filters?.agent_id) q.set('agent_id', filters.agent_id);
+      if (filters?.pipeline_id != null) q.set('pipeline_id', String(filters.pipeline_id));
+      const qs = q.toString();
+      return fetchApi<Source[]>(`/sources/${qs ? `?${qs}` : ''}`);
+    },
+    create: (body: Partial<Source> & { url: string }) =>
       fetchApi<Source>('/sources/', { method: 'POST', body: JSON.stringify(body) }),
+    detectAgent: (url: string) =>
+      fetchApi<{ url: string; agent_id: string }>(`/sources/detect-agent?url=${encodeURIComponent(url)}`),
     get: (id: number) => fetchApi<Source>(`/sources/${id}`),
     update: (id: number, body: Partial<Source>) =>
       fetchApi<Source>(`/sources/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),

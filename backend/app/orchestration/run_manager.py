@@ -59,13 +59,30 @@ def load_radar_config(full: bool = False) -> Dict[str, Any]:
     return {"global": global_section, "agents": {}}
 
 
-async def merge_sources_into_config(config: Dict[str, Any]) -> Dict[str, Any]:
-    """Build agent config from ALL enabled DB sources (daily re-crawl). Change detection skips unchanged content."""
+async def merge_sources_into_config(
+    config: Dict[str, Any],
+    pipeline_name: str | None = None,
+) -> Dict[str, Any]:
+    """Build agent config from DB sources. Filters by pipeline_name when provided."""
     agents = config.setdefault("agents", {})
     source_ids: List[int] = []
     try:
         async with async_session() as session:
-            result = await session.execute(select(Source).where(Source.enabled == True))
+            q = select(Source).where(Source.enabled == True)  # noqa: E712
+            if pipeline_name:
+                from app.db.models import PipelineConfig
+
+                pc_result = await session.execute(
+                    select(PipelineConfig).where(
+                        PipelineConfig.pipeline_name == pipeline_name
+                    )
+                )
+                pc = pc_result.scalar_one_or_none()
+                if pc:
+                    q = q.where(Source.pipeline_id == pc.id)
+                else:
+                    q = q.where(Source.name == pipeline_name)
+            result = await session.execute(q)
             sources = result.scalars().all()
     except Exception as e:
         logger.warning("Could not load sources from DB: %s", e)
@@ -77,10 +94,9 @@ async def merge_sources_into_config(config: Dict[str, Any]) -> Dict[str, Any]:
         if not s.url or not s.agent_id:
             continue
         source_ids.append(s.id)
-        all_urls = [u.strip() for u in s.url.split(",") if u.strip()]
-        for u in all_urls:
-            url_to_source_id[u] = s.id
-        name = (s.name or all_urls[0])[:200]
+        url = s.url.strip()
+        url_to_source_id[url] = s.id
+        name = (s.name or url)[:200]
         if s.agent_id == "competitors":
             agents.setdefault("competitors", [])
             if not isinstance(agents["competitors"], list):
@@ -88,8 +104,8 @@ async def merge_sources_into_config(config: Dict[str, Any]) -> Dict[str, Any]:
             agents["competitors"].append(
                 {
                     "name": name,
-                    "source_config_url": all_urls[0],
-                    "release_urls": all_urls,
+                    "source_config_url": url,
+                    "release_urls": [url],
                     "rss_feeds": [s.rss_feed] if s.rss_feed else [],
                     "keywords": s.keywords if s.keywords is not None else [],
                     "selectors": s.selectors,
@@ -105,8 +121,8 @@ async def merge_sources_into_config(config: Dict[str, Any]) -> Dict[str, Any]:
             agents["model_providers"].append(
                 {
                     "name": name,
-                    "source_config_url": all_urls[0],
-                    "urls": all_urls,
+                    "source_config_url": url,
+                    "urls": [url],
                     "rss_feeds": [s.rss_feed] if s.rss_feed else [],
                     "focus": (
                         (s.extra_config or {}).get("focus")
@@ -124,9 +140,8 @@ async def merge_sources_into_config(config: Dict[str, Any]) -> Dict[str, Any]:
             if not isinstance(agents["research"], dict):
                 agents["research"] = {}
             curated = agents["research"].get("curated_urls") or []
-            for u in all_urls:
-                if u not in curated:
-                    curated.append(u)
+            if url not in curated:
+                curated.append(url)
             agents["research"]["curated_urls"] = curated
             if (
                 isinstance(s.extra_config, dict)
@@ -139,11 +154,10 @@ async def merge_sources_into_config(config: Dict[str, Any]) -> Dict[str, Any]:
             agents.setdefault("hf_benchmarks", {})
             if not isinstance(agents["hf_benchmarks"], dict):
                 agents["hf_benchmarks"] = {}
-            urls = agents["hf_benchmarks"].get("leaderboard_urls") or []
-            for u in all_urls:
-                if u not in urls:
-                    urls.append(u)
-            agents["hf_benchmarks"]["leaderboard_urls"] = urls
+            lb_urls = agents["hf_benchmarks"].get("leaderboard_urls") or []
+            if url not in lb_urls:
+                lb_urls.append(url)
+            agents["hf_benchmarks"]["leaderboard_urls"] = lb_urls
 
     config["_source_ids"] = source_ids
     config["_url_to_source_id"] = url_to_source_id
@@ -207,13 +221,13 @@ class RunManager:
                 "global": {},
                 "agents": config_override.get("agents", config_override),
             }
-            config = await merge_sources_into_config(config)
+            config = await merge_sources_into_config(config, pipeline_name=pipeline_name)
         elif use_yaml:
             config = load_radar_config(full=True)
-            config = await merge_sources_into_config(config)
+            config = await merge_sources_into_config(config, pipeline_name=pipeline_name)
         else:
             config = load_radar_config()
-            config = await merge_sources_into_config(config)
+            config = await merge_sources_into_config(config, pipeline_name=pipeline_name)
         agents = config.get("agents", {}) or {}
         research = (
             agents.get("research") if isinstance(agents.get("research"), dict) else {}

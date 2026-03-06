@@ -1,13 +1,32 @@
 """Async database session and lifecycle — local SQLite only."""
 
 from collections.abc import AsyncGenerator
+from datetime import datetime, timezone
 from pathlib import Path
 
-from sqlalchemy import text
+from sqlalchemy import DateTime, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.types import TypeDecorator
 
 from app.config import get_settings
+
+
+class UTCDateTime(TypeDecorator):
+    """DateTime that always returns UTC-aware datetimes from the DB.
+
+    SQLite strips timezone info on storage. This decorator re-attaches
+    UTC on read so JSON serialization includes the 'Z'/'+00:00' suffix
+    and browsers parse the time correctly.
+    """
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_result_value(self, value, dialect):
+        if value is not None and isinstance(value, datetime) and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
 
 settings = get_settings()
 
@@ -93,6 +112,11 @@ async def init_db() -> None:
                     "pipeline_configs",
                     "enabled",
                     "ALTER TABLE pipeline_configs ADD COLUMN enabled BOOLEAN DEFAULT 1",
+                ),
+                (
+                    "sources",
+                    "pipeline_id",
+                    "ALTER TABLE sources ADD COLUMN pipeline_id INTEGER REFERENCES pipeline_configs(id)",
                 ),
             ]
 

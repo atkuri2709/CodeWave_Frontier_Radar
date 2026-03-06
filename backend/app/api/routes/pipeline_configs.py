@@ -5,6 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db.database import get_db
 from app.db.models import PipelineConfig
@@ -68,7 +69,12 @@ async def delete_pipeline_config(
     config_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    pc = await db.get(PipelineConfig, config_id)
+    result = await db.execute(
+        select(PipelineConfig)
+        .options(selectinload(PipelineConfig.sources))
+        .where(PipelineConfig.id == config_id)
+    )
+    pc = result.scalar_one_or_none()
     if not pc:
         raise HTTPException(status_code=404, detail="Pipeline config not found")
     await db.delete(pc)

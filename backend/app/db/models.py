@@ -3,17 +3,20 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, Boolean, JSON
+from sqlalchemy import Float, ForeignKey, Integer, String, Text, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from app.db.database import Base, UTCDateTime
 
 
 class Source(Base):
     __tablename__ = "sources"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    pipeline_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("pipeline_configs.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     url: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     agent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
@@ -27,9 +30,12 @@ class Source(Base):
     extra_config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     last_run_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )
 
+    pipeline: Mapped[Optional["PipelineConfig"]] = relationship(
+        back_populates="sources", foreign_keys=[pipeline_id]
+    )
     findings: Mapped[list["Finding"]] = relationship(
         back_populates="source_rel", foreign_keys="Finding.source_id"
     )
@@ -44,7 +50,7 @@ class Snapshot(Base):
         ForeignKey("sources.id"), nullable=True
     )
     fetched_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+        UTCDateTime(timezone=True), nullable=False
     )
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     raw_content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -61,14 +67,14 @@ class Extraction(Base):
     )
     title: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     published_date: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        UTCDateTime(timezone=True), nullable=True
     )
     text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     extracted_metadata: Mapped[Optional[dict]] = mapped_column(
         JSON, nullable=True
     )  # 'metadata' is reserved by SQLAlchemy
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )
 
 
@@ -81,10 +87,15 @@ class PipelineConfig(Base):
     config_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        UTCDateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    sources: Mapped[list["Source"]] = relationship(
+        back_populates="pipeline", foreign_keys="Source.pipeline_id",
+        cascade="all, delete-orphan",
     )
 
 
@@ -96,10 +107,10 @@ class Run(Base):
     pipeline_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     started_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        UTCDateTime(timezone=True), nullable=True
     )
     finished_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        UTCDateTime(timezone=True), nullable=True
     )
     trigger: Mapped[str] = mapped_column(String(32), default="manual")
     agent_results: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
@@ -108,7 +119,7 @@ class Run(Base):
     )
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )
 
     findings: Mapped[list["Finding"]] = relationship(back_populates="run")
@@ -135,10 +146,10 @@ class ScheduledJob(Base):
     interval_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        UTCDateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
@@ -154,7 +165,7 @@ class Finding(Base):
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     date_detected: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+        UTCDateTime(timezone=True), nullable=False
     )
     source_url: Mapped[str] = mapped_column(String(2048), nullable=False)
     publisher: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
@@ -173,7 +184,7 @@ class Finding(Base):
     raw_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     impact_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )
 
     run: Mapped[Optional["Run"]] = relationship(back_populates="findings")
@@ -194,10 +205,10 @@ class Digest(Base):
     top_finding_ids: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     recipients: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     sent_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        UTCDateTime(timezone=True), nullable=True
     )
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )
 
     run: Mapped["Run"] = relationship(back_populates="digest")
@@ -210,7 +221,7 @@ class LogEntry(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("runs.id"), nullable=False, index=True
     )
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(UTCDateTime(timezone=True), nullable=False)
     level: Mapped[str] = mapped_column(String(16), nullable=False, default="INFO")
     logger_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)
@@ -226,5 +237,5 @@ class EmailRecipient(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(String(256), nullable=False, unique=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        UTCDateTime(timezone=True), server_default=func.now()
     )

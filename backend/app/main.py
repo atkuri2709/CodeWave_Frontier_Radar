@@ -12,7 +12,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logging.getLogger("app").setLevel(logging.INFO)
-# Avoid logging full request URLs (they can contain API keys); show WARNING and above only
 logging.getLogger("httpx").setLevel(logging.WARNING)
 from fastapi.middleware.cors import CORSMiddleware
 
