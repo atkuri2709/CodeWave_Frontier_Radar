@@ -1,17 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api, type Source } from '@/lib/api';
+import { api, type Source, type PipelineConfig } from '@/lib/api';
 import { useToast } from '../components/Toast';
 
 const AGENT_OPTIONS = [ { value: 'competitors', label: 'Competitors' }, { value: 'model_providers', label: 'Model Providers' }, { value: 'research', label: 'Research' }, { value: 'hf_benchmarks', label: 'HF Benchmarks' } ] as const;
 const AGENT_BADGE: Record<string, string> = { competitors: 'agent-orange', model_providers: 'agent-lavender', research: 'agent-gold', hf_benchmarks: 'agent-navy' };
 
-interface FormState { pipeline_name: string; pipeline_description: string; url: string; agent_id: string; name: string }
-const emptyForm: FormState = { pipeline_name: '', pipeline_description: '', url: '', agent_id: 'competitors', name: '' };
+interface FormState { pipeline_name: string; pipeline_description: string; url: string; agent_id: string; name: string; pipeline_config_id: number | null }
+const emptyForm: FormState = { pipeline_name: '', pipeline_description: '', url: '', agent_id: 'competitors', name: '', pipeline_config_id: null };
 
 export default function SourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
+  const [pipelineConfigs, setPipelineConfigs] = useState<PipelineConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -19,14 +20,31 @@ export default function SourcesPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const toast = useToast();
 
-  useEffect(() => { api.sources.list().then(setSources).catch(() => {}).finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    Promise.all([api.sources.list(), api.pipelineConfigs.list()])
+      .then(([s, pc]) => { setSources(s); setPipelineConfigs(pc); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const resetForm = () => { setForm(emptyForm); setEditingId(null); setShowForm(false); };
 
   const startEdit = (s: Source) => {
+    const matchedConfig = pipelineConfigs.find(pc =>
+      pc.pipeline_name === s.name ||
+      pc.pipeline_name.toLowerCase() === (s.name || '').toLowerCase()
+    ) || (pipelineConfigs.length > 0 ? pipelineConfigs.reduce((closest, pc) => {
+      const sTime = s.created_at ? new Date(s.created_at).getTime() : 0;
+      const pcTime = pc.created_at ? new Date(pc.created_at).getTime() : 0;
+      const closestTime = closest.created_at ? new Date(closest.created_at).getTime() : 0;
+      return Math.abs(pcTime - sTime) < Math.abs(closestTime - sTime) ? pc : closest;
+    }) : null);
+
     setForm({
-      pipeline_name: '', pipeline_description: '',
+      pipeline_name: matchedConfig?.pipeline_name || s.name || '',
+      pipeline_description: matchedConfig?.pipeline_description || '',
       url: s.url, agent_id: s.agent_id, name: s.name || '',
+      pipeline_config_id: matchedConfig?.id || null,
     });
     setEditingId(s.id);
     setShowForm(true);
@@ -45,6 +63,13 @@ export default function SourcesPage() {
     try {
       if (editingId) {
         await api.sources.update(editingId, { url: form.url, agent_id: form.agent_id, name: form.name || undefined } as any);
+        if (form.pipeline_config_id) {
+          await api.pipelineConfigs.delete(form.pipeline_config_id).catch(() => {});
+        }
+        await api.pipelineConfigs.create({
+          pipeline_name: form.pipeline_name.trim(),
+          pipeline_description: form.pipeline_description.trim() || undefined,
+        });
         toast.show('Pipeline updated!', 'success');
       } else {
         const urlCount = form.url.split(',').map(u => u.trim()).filter(Boolean).length;
@@ -59,7 +84,9 @@ export default function SourcesPage() {
         toast.show(`Pipeline added with ${urlCount} URL${urlCount > 1 ? 's' : ''}!`, 'success');
       }
       resetForm();
-      setSources(await api.sources.list());
+      const [updatedSources, updatedConfigs] = await Promise.all([api.sources.list(), api.pipelineConfigs.list()]);
+      setSources(updatedSources);
+      setPipelineConfigs(updatedConfigs);
     } catch { toast.show(editingId ? 'Failed to update.' : 'Failed to add.', 'error'); }
   };
 
