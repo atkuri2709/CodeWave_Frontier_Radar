@@ -207,7 +207,9 @@ export default function DashboardPage() {
                   YAML
                 </button>
                 <button onClick={() => { setRunMode('json'); setJsonInput('{\n  "agents": {}\n}'); setJsonSave(false); setJsonName(''); setJsonError(''); }} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-[rgba(157,170,242,0.06)]" style={{ color: '#1A2238', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: '#059669' }}>{ }</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'rgba(16,185,129,0.1)', color: '#059669' }}>
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>
+                  </span>
                   JSON
                 </button>
                 <button onClick={openPipelineSelect} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-[rgba(157,170,242,0.06)]" style={{ color: '#1A2238', borderTop: '1px solid rgba(26,34,56,0.06)' }}>

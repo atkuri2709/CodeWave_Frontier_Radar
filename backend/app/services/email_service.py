@@ -59,12 +59,17 @@ class EmailService:
             return False
 
         if self._smtp_configured:
+            retries = 1 if self._mailgun_configured else MAX_RETRIES
             ok = await self._send_smtp_with_retry(
-                recipients, subject, body_plain, body_html, pdf_path, attachment_filename
+                recipients, subject, body_plain, body_html, pdf_path, attachment_filename,
+                max_retries=retries,
             )
             if ok:
                 return True
-            logger.warning("SMTP failed; attempting Mailgun fallback...")
+            if self._mailgun_configured:
+                logger.info("SMTP failed; falling back to Mailgun...")
+            else:
+                logger.warning("SMTP failed and no Mailgun configured.")
 
         if self._mailgun_configured:
             return await self._send_mailgun_with_retry(
@@ -84,9 +89,10 @@ class EmailService:
         body_html: str,
         pdf_path: Optional[Path] = None,
         attachment_filename: Optional[str] = None,
+        max_retries: int = MAX_RETRIES,
     ) -> bool:
         last_error: Optional[Exception] = None
-        for attempt in range(MAX_RETRIES + 1):
+        for attempt in range(max_retries + 1):
             try:
                 msg = MIMEMultipart("alternative")
                 msg["Subject"] = subject
@@ -129,18 +135,18 @@ class EmailService:
                 OSError,
             ) as e:
                 last_error = e
-                if attempt < MAX_RETRIES:
+                if attempt < max_retries:
                     wait = min(BACKOFF_MAX, BACKOFF_BASE ** (attempt + 1))
                     logger.info(
                         "SMTP send failed (%s), retry %d/%d in %.1fs",
                         type(e).__name__,
                         attempt + 1,
-                        MAX_RETRIES,
+                        max_retries,
                         wait,
                     )
                     await asyncio.sleep(wait)
                     continue
-                logger.warning("SMTP send failed after %d retries: %s", MAX_RETRIES, e)
+                logger.warning("SMTP send failed after %d retries: %s", max_retries, e)
                 return False
 
             except Exception as e:
@@ -168,12 +174,34 @@ class EmailService:
             or f"Frontier AI Radar <radar@{self.settings.mailgun_domain}>"
         )
 
+        any_sent = False
+        for recipient in recipients:
+            ok = await self._mailgun_send_one(
+                url, sender, recipient, subject, body_plain, body_html,
+                pdf_path, attachment_filename,
+            )
+            if ok:
+                any_sent = True
+
+        return any_sent
+
+    async def _mailgun_send_one(
+        self,
+        url: str,
+        sender: str,
+        recipient: str,
+        subject: str,
+        body_plain: str,
+        body_html: str,
+        pdf_path: Optional[Path] = None,
+        attachment_filename: Optional[str] = None,
+    ) -> bool:
         last_error: Optional[Exception] = None
         for attempt in range(MAX_RETRIES + 1):
             try:
                 data = {
                     "from": sender,
-                    "to": recipients,
+                    "to": [recipient],
                     "subject": subject,
                     "text": body_plain,
                     "html": body_html,
@@ -198,9 +226,19 @@ class EmailService:
                     fobj[1].close()
 
                 if resp.status_code == 200:
-                    logger.info("Digest email sent via Mailgun to %s", recipients)
+                    logger.info("Mailgun email sent to %s", recipient)
                     return True
+                elif resp.status_code == 403:
+                    logger.warning(
+                        "Mailgun rejected %s (not authorized on sandbox): %s",
+                        recipient, resp.text,
+                    )
+                    return False
                 else:
+                    logger.warning(
+                        "Mailgun API error %d for %s: %s",
+                        resp.status_code, recipient, resp.text,
+                    )
                     raise httpx.HTTPStatusError(
                         f"Mailgun returned {resp.status_code}: {resp.text}",
                         request=resp.request,
@@ -212,19 +250,18 @@ class EmailService:
                 if attempt < MAX_RETRIES:
                     wait = min(BACKOFF_MAX, BACKOFF_BASE ** (attempt + 1))
                     logger.info(
-                        "Mailgun send failed (%s), retry %d/%d in %.1fs",
-                        type(e).__name__,
-                        attempt + 1,
-                        MAX_RETRIES,
-                        wait,
+                        "Mailgun send to %s failed (%s), retry %d/%d in %.1fs",
+                        recipient, type(e).__name__,
+                        attempt + 1, MAX_RETRIES, wait,
                     )
                     await asyncio.sleep(wait)
                     continue
                 logger.warning(
-                    "Mailgun send failed after %d retries: %s", MAX_RETRIES, e
+                    "Mailgun send to %s failed after %d retries: %s",
+                    recipient, MAX_RETRIES, e,
                 )
                 return False
 
         if last_error:
-            logger.warning("Mailgun send exhausted retries: %s", last_error)
+            logger.warning("Mailgun send to %s exhausted retries: %s", recipient, last_error)
         return False

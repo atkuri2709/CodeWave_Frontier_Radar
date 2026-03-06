@@ -252,37 +252,30 @@ class DigestAgent(BaseAgent):
 
         sent = False
         if recipients:
-            if settings.smtp_host and settings.smtp_user:
-                if pdf_path_obj and pdf_path_obj.exists():
-                    sent = await self.email.send_digest(
+            if pdf_path_obj and pdf_path_obj.exists():
+                sent = await self.email.send_digest(
+                    recipients,
+                    f"{subject} — Top AI releases, research & benchmark updates",
+                    body_html,
+                    body_plain,
+                    pdf_path_obj,
+                    attachment_filename=f"frontier_ai_radar_{report_date.strftime('%Y_%m_%d')}_run{run_id}.pdf",
+                )
+                if sent:
+                    digest.sent_at = datetime.now(timezone.utc)
+                    digest.recipients = recipients
+                    logger.info(
+                        "Digest email sent to %s recipients: %s",
+                        len(recipients),
                         recipients,
-                        f"{subject} — Top AI releases, research & benchmark updates",
-                        body_html,
-                        body_plain,
-                        pdf_path_obj,
-                        attachment_filename=f"frontier_ai_radar_{report_date.strftime('%Y_%m_%d')}_run{run_id}.pdf",
                     )
-                    if sent:
-                        digest.sent_at = datetime.now(timezone.utc)
-                        digest.recipients = recipients
-                        logger.info(
-                            "Digest email sent to %s recipients: %s",
-                            len(recipients),
-                            recipients,
-                        )
-                    else:
-                        logger.warning(
-                            "Digest email send failed (check SMTP settings)."
-                        )
                 else:
                     logger.warning(
-                        "Digest email skipped: PDF file not found for attachment."
+                        "Digest email send failed (check SMTP/Mailgun settings)."
                     )
             else:
                 logger.warning(
-                    "Digest email skipped: SMTP not configured (set SMTP_HOST, SMTP_USER, SMTP_PASSWORD in .env). "
-                    "Recipients would be: %s",
-                    recipients,
+                    "Digest email skipped: PDF file not found for attachment."
                 )
         else:
             logger.info("No email recipients configured; digest PDF saved only.")
