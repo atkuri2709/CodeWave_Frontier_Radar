@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, or_
+from sqlalchemy import cast, select, or_, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -73,9 +73,9 @@ async def list_findings(
             )
         )
     if tag:
-        q = q.where(Finding.tags.contains(tag))
+        q = q.where(cast(Finding.tags, String).ilike(f'%"{tag}"%'))
     if entity:
-        q = q.where(Finding.entities.contains(entity))
+        q = q.where(cast(Finding.entities, String).ilike(f'%"{entity}"%'))
 
     q = (
         q.order_by(Finding.impact_score.desc().nullslast(), Finding.created_at.desc())
@@ -136,5 +136,5 @@ async def get_finding(
         impact_score=f.impact_score,
         is_sota=f.is_sota,
         sota_confidence=f.sota_confidence,
-        created_at=f.created_at,
+        created_at=f.created_at or f.date_detected,
     )

@@ -16,7 +16,7 @@ class DigestOut(BaseModel):
     top_finding_ids: List[int] = []
     recipients: List[str] = []
     sent_at: Optional[datetime] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
