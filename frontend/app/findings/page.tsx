@@ -15,8 +15,11 @@ function ConfidenceBadge({ value }: { value: number }) {
   return (<span className={`flex items-center gap-2 text-xs font-medium ${color}`}><span className="confidence-meter"><span className={`confidence-fill ${bg}`} style={{ width: `${pct}%` }} /></span>{pct}% {label}</span>);
 }
 
-function isToday(d: string) { return new Date(d).toDateString() === new Date().toDateString(); }
-function isYesterday(d: string) { const y = new Date(); y.setDate(y.getDate() - 1); return new Date(d).toDateString() === y.toDateString(); }
+function toIST(d: string) { return new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+function todayIST() { return new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+function yesterdayIST() { const y = new Date(); y.setDate(y.getDate() - 1); return y.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+function isToday(d: string) { return toIST(d) === todayIST(); }
+function isYesterday(d: string) { return toIST(d) === yesterdayIST(); }
 
 export default function FindingsPage() {
   const [findings, setFindings] = useState<FindingSummary[]>([]);
@@ -78,7 +81,7 @@ export default function FindingsPage() {
           <span className="rounded-lg px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(26,34,56,0.05)', color: '#6b7394' }}>{f.category}</span>
           {f.publisher && <span className="rounded-lg px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'rgba(157,170,242,0.08)', color: '#4c5aad' }}>{f.publisher}</span>}
           <ConfidenceBadge value={f.confidence} />
-          <span className="text-[10px]" style={{ color: '#9ba2bc' }}>{new Date(f.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+          <span className="text-[10px]" style={{ color: '#9ba2bc' }}>{new Date(f.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', timeZone: 'Asia/Kolkata' })}</span>
         </div>
         {(f.entities?.length > 0 || f.tags?.length > 0) && (
           <div className="mt-2 flex flex-wrap gap-1">

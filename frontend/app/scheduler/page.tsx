@@ -5,9 +5,9 @@ import { api, type ScheduledJob, type SchedulerStatus, type PipelineConfig } fro
 import { useToast } from '../components/Toast';
 
 const TIMEZONES = [
-  'UTC', 'US/Eastern', 'US/Central', 'US/Pacific',
+  'Asia/Kolkata', 'UTC', 'US/Eastern', 'US/Central', 'US/Pacific',
   'Europe/London', 'Europe/Berlin', 'Europe/Paris',
-  'Asia/Kolkata', 'Asia/Tokyo', 'Asia/Shanghai',
+  'Asia/Tokyo', 'Asia/Shanghai',
   'Australia/Sydney',
 ];
 
@@ -157,7 +157,7 @@ export default function SchedulerPage() {
   const formatSchedule = (job: ScheduledJob) => {
     if (job.frequency === 'interval') return `Every ${job.interval_minutes} min`;
     const time = job.run_time || '06:30';
-    const tz = job.timezone || 'UTC';
+    const tz = job.timezone || 'Asia/Kolkata';
     const base = FREQ_LABEL[job.frequency] || job.frequency;
     return `${base} at ${time} (${tz})`;
   };
@@ -417,7 +417,7 @@ export default function SchedulerPage() {
                       {nextRun?.next_run && (
                         <>
                           <span style={{ color: '#d0d3de' }}>&middot;</span>
-                          <span className="text-emerald-600 font-medium">Next: {new Date(nextRun.next_run).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
+                          <span className="text-emerald-600 font-medium">Next: {new Date(nextRun.next_run).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Kolkata' })}</span>
                         </>
                       )}
                     </div>

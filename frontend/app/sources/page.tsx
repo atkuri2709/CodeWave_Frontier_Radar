@@ -34,7 +34,7 @@ export default function SourcesPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingId && !form.pipeline_name.trim()) {
+    if (!form.pipeline_name.trim()) {
       toast.show('Pipeline Name is required.', 'error');
       return;
     }
@@ -44,7 +44,7 @@ export default function SourcesPage() {
     }
     try {
       if (editingId) {
-        await api.sources.update(editingId, { name: form.name || undefined });
+        await api.sources.update(editingId, { url: form.url, agent_id: form.agent_id, name: form.name || undefined } as any);
         toast.show('Pipeline updated!', 'success');
       } else {
         const urlCount = form.url.split(',').map(u => u.trim()).filter(Boolean).length;
@@ -92,18 +92,14 @@ export default function SourcesPage() {
         <form onSubmit={submit} className="glass-card animate-slide-up space-y-5 p-6">
           <h2 className="text-base font-bold" style={{ color: '#1A2238' }}>{editingId ? 'Edit Pipeline' : 'New Pipeline'}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            {!editingId && (
-              <>
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Name <span className="text-red-500">*</span></label>
-                  <input type="text" placeholder="e.g. Morning Intelligence Sweep" required value={form.pipeline_name} onChange={e => setForm({...form, pipeline_name: e.target.value})} className="input-field" />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Description</label>
-                  <input type="text" placeholder="e.g. Track competitor releases and model updates" value={form.pipeline_description} onChange={e => setForm({...form, pipeline_description: e.target.value})} className="input-field" />
-                </div>
-              </>
-            )}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Name <span className="text-red-500">*</span></label>
+              <input type="text" placeholder="e.g. Morning Intelligence Sweep" required value={form.pipeline_name} onChange={e => setForm({...form, pipeline_name: e.target.value})} className="input-field" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Description</label>
+              <input type="text" placeholder="e.g. Track competitor releases and model updates" value={form.pipeline_description} onChange={e => setForm({...form, pipeline_description: e.target.value})} className="input-field" />
+            </div>
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>
                 URLs <span className="text-red-500">*</span> <span className="font-normal text-[10px]">(separate multiple URLs with commas)</span>
@@ -111,14 +107,12 @@ export default function SourcesPage() {
               <textarea
                 placeholder={"https://openai.com/blog, https://deepmind.google/blog, https://anthropic.com/news"}
                 required
-                disabled={!!editingId}
                 value={form.url}
                 onChange={e => setForm({...form, url: e.target.value})}
                 className="input-field min-h-[56px] resize-y"
                 rows={2}
-                style={editingId ? { opacity: 0.6 } : {}}
               />
-              {!editingId && form.url.includes(',') && (
+              {form.url.includes(',') && (
                 <p className="mt-1 text-[10px] font-medium" style={{ color: '#059669' }}>
                   {form.url.split(',').map(u => u.trim()).filter(Boolean).length} URLs will be added
                 </p>
@@ -130,7 +124,7 @@ export default function SourcesPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Agent Type</label>
-              <select value={form.agent_id} disabled={!!editingId} onChange={e => setForm({...form, agent_id: e.target.value})} className="input-field" style={editingId ? { opacity: 0.6 } : {}}>
+              <select value={form.agent_id} onChange={e => setForm({...form, agent_id: e.target.value})} className="input-field">
                 {AGENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>

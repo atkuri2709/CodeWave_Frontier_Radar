@@ -6,8 +6,11 @@ import { api, type FindingSummary, type Run } from '@/lib/api';
 const AGENT_LABELS: Record<string, string> = { competitors: 'Competitors', model_providers: 'Model Providers', research: 'Research', hf_benchmarks: 'Benchmarks' };
 const AGENT_COLORS: Record<string, string> = { competitors: '#FF6A3D', model_providers: '#9DAAF2', research: '#F4DB7D', hf_benchmarks: '#1A2238' };
 
-function isToday(d: string) { return new Date(d).toDateString() === new Date().toDateString(); }
-function isYesterday(d: string) { const y = new Date(); y.setDate(y.getDate() - 1); return new Date(d).toDateString() === y.toDateString(); }
+function toIST(d: string) { return new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+function todayIST() { return new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+function yesterdayIST() { const y = new Date(); y.setDate(y.getDate() - 1); return y.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
+function isToday(d: string) { return toIST(d) === todayIST(); }
+function isYesterday(d: string) { return toIST(d) === yesterdayIST(); }
 
 export default function AnalyticsPage() {
   const [findings, setFindings] = useState<FindingSummary[]>([]);
@@ -132,7 +135,7 @@ function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[]
   const sortedRuns = [...runs].sort((a, b) => new Date(a.started_at || '').getTime() - new Date(b.started_at || '').getTime());
   const runData = sortedRuns.map(r => ({
     id: r.id,
-    date: r.started_at ? new Date(r.started_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : `#${r.id}`,
+    date: r.started_at ? new Date(r.started_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', timeZone: 'Asia/Kolkata' }) : `#${r.id}`,
     benchmarks: r.agent_results?.hf_benchmarks?.count ?? 0,
     total: r.findings_count,
   }));

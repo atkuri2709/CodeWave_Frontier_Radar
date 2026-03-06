@@ -26,9 +26,9 @@ export default function RunsPage() {
 
   useEffect(() => { api.runs.list().then(setRuns).catch(() => {}).finally(() => setLoading(false)); }, []);
 
-  const formatDate = (d: string | null) => d ? new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  const formatDate = (d: string | null) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }) : '—';
   const formatDuration = (s: string | null, e: string | null) => { if (!s||!e) return '—'; const ms = new Date(e).getTime()-new Date(s).getTime(); if (ms<1000) return `${ms}ms`; if (ms<60000) return `${(ms/1000).toFixed(1)}s`; return `${Math.floor(ms/60000)}m ${Math.round((ms%60000)/1000)}s`; };
-  const formatLogTime = (ts: string) => new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 } as Intl.DateTimeFormatOptions);
+  const formatLogTime = (ts: string) => new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3, timeZone: 'Asia/Kolkata' } as Intl.DateTimeFormatOptions);
 
   const handleToggleRun = (runId: number) => {
     setExpandedRun(expandedRun === runId ? null : runId);

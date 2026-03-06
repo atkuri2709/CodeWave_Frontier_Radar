@@ -156,7 +156,7 @@ export default function DashboardPage() {
     const diffM = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
     if (diffM < 1) return 'Just now'; if (diffM < 60) return `${diffM}m ago`;
     const diffH = Math.floor(diffM / 60); if (diffH < 24) return `${diffH}h ago`;
-    return new Date(dateStr).toLocaleDateString();
+    return new Date(dateStr).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
   };
 
   const statusColor = (s: string) => s === 'success' ? 'badge-emerald' : s === 'running' ? 'badge-amber' : s === 'failed' || s === 'partial' ? 'badge-red' : 'badge-zinc';
