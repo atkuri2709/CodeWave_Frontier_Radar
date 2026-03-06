@@ -1,8 +1,17 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { api, type FindingSummary, type Run } from '@/lib/api';
 import { useMeta } from '@/lib/useMeta';
+
+function startOfDayIST(daysAgo = 0): string {
+  const d = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(d.getTime() + istOffset);
+  istNow.setUTCHours(0, 0, 0, 0);
+  istNow.setUTCDate(istNow.getUTCDate() - daysAgo);
+  return new Date(istNow.getTime() - istOffset).toISOString();
+}
 
 function toIST(d: string) { return new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
 function todayIST() { return new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
@@ -15,11 +24,21 @@ export default function AnalyticsPage() {
   const [runs, setRuns] = useState<Run[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'diff' | 'sota' | 'heatmap'>('diff');
+  const [diffFindings, setDiffFindings] = useState<FindingSummary[]>([]);
+  const [diffLoading, setDiffLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([api.findings.list({}), api.runs.list()])
       .then(([f, r]) => { setFindings(f); setRuns(r); })
       .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setDiffLoading(true);
+    api.findings.list({ created_after: startOfDayIST(1), limit: 500 })
+      .then(setDiffFindings)
+      .catch(() => {})
+      .finally(() => setDiffLoading(false));
   }, []);
 
   const tabs = [
@@ -52,7 +71,7 @@ export default function AnalyticsPage() {
 
       {loading ? <div className="h-96 skeleton rounded-2xl" /> : (
         <>
-          {activeTab === 'diff' && <DiffViewer findings={findings} />}
+          {activeTab === 'diff' && <DiffViewer findings={diffFindings} loading={diffLoading} />}
           {activeTab === 'sota' && <SOTAWatch findings={findings} runs={runs} />}
           {activeTab === 'heatmap' && <EntityHeatmap findings={findings} />}
         </>
@@ -62,15 +81,22 @@ export default function AnalyticsPage() {
 }
 
 /* ============== DIFF VIEWER ============== */
-function DiffViewer({ findings }: { findings: FindingSummary[] }) {
+function DiffViewer({ findings, loading }: { findings: FindingSummary[]; loading: boolean }) {
   const { agentLabel } = useMeta();
-  const todayFindings = findings.filter(f => isToday(f.created_at));
-  const yesterdayFindings = findings.filter(f => isYesterday(f.created_at));
-  const yTitles = new Set(yesterdayFindings.map(f => f.title));
-  const tTitles = new Set(todayFindings.map(f => f.title));
-  const added = todayFindings.filter(f => !yTitles.has(f.title));
-  const removed = yesterdayFindings.filter(f => !tTitles.has(f.title));
-  const persisted = todayFindings.filter(f => yTitles.has(f.title));
+  const todayFindings = useMemo(() => findings.filter(f => isToday(f.created_at)), [findings]);
+  const yesterdayFindings = useMemo(() => findings.filter(f => isYesterday(f.created_at)), [findings]);
+
+  const { added, removed, persisted } = useMemo(() => {
+    const yTitles = new Set(yesterdayFindings.map(f => f.title.toLowerCase().trim()));
+    const tTitles = new Set(todayFindings.map(f => f.title.toLowerCase().trim()));
+    return {
+      added: todayFindings.filter(f => !yTitles.has(f.title.toLowerCase().trim())),
+      removed: yesterdayFindings.filter(f => !tTitles.has(f.title.toLowerCase().trim())),
+      persisted: todayFindings.filter(f => yTitles.has(f.title.toLowerCase().trim())),
+    };
+  }, [todayFindings, yesterdayFindings]);
+
+  if (loading) return <div className="h-64 skeleton rounded-2xl" />;
 
   return (
     <div className="space-y-5">
@@ -121,7 +147,28 @@ function DiffViewer({ findings }: { findings: FindingSummary[] }) {
         </div>
       )}
 
-      {added.length === 0 && removed.length === 0 && (
+      {persisted.length > 0 && (
+        <div className="glass-card overflow-hidden">
+          <div className="flex items-center gap-2 border-b px-5 py-3" style={{ borderColor: 'rgba(26,34,56,0.06)' }}>
+            <div className="h-2 w-2 rounded-full" style={{ background: '#7580d4' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#1A2238' }}>Persisted ({persisted.length})</h3>
+          </div>
+          <ul className="divide-y" style={{ '--tw-divide-color': 'rgba(26,34,56,0.04)' } as React.CSSProperties}>
+            {persisted.map(f => (
+              <li key={f.id} className="flex items-center gap-3 px-5 py-3" style={{ opacity: 0.7 }}>
+                <span className="text-xs font-bold" style={{ color: '#7580d4' }}>=</span>
+                <div className="min-w-0 flex-1">
+                  <a href={f.source_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-[#FF6A3D] line-clamp-1" style={{ color: '#1A2238' }}>{f.title}</a>
+                  <p className="line-clamp-1 text-xs" style={{ color: '#9ba2bc' }}>{f.summary_short}</p>
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: '#6b7394' }}>{agentLabel(f.agent_id)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {added.length === 0 && removed.length === 0 && persisted.length === 0 && (
         <div className="glass-card"><div className="empty-state"><p className="text-sm font-semibold" style={{ color: '#3d4660' }}>No changes detected</p><p className="text-xs" style={{ color: '#6b7394' }}>Run the pipeline on consecutive days to see diffs.</p></div></div>
       )}
     </div>
