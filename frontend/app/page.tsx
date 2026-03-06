@@ -50,6 +50,12 @@ export default function DashboardPage() {
     refreshData().catch(() => {}).finally(() => setLoading(false));
   }, [refreshData]);
 
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const lastRun = runs[0];
   const latestDigestId = digests[0]?.id ?? lastRun?.digest_id ?? null;
   const downloadPdfUrl = latestDigestId ? `${API_BASE}/digests/${latestDigestId}/download` : null;
@@ -338,7 +344,7 @@ export default function DashboardPage() {
             <div className="stat-card flex flex-col">
               <div className="stat-icon" style={{ background: lastRun?.status==='success'?'#ecfdf5':lastRun?.status==='failed'?'#fef2f2':'rgba(26,34,56,0.06)', color: lastRun?.status==='success'?'#059669':lastRun?.status==='failed'?'#dc2626':'#6b7394' }}><svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
               <div className="stat-value flex-1 flex items-end">{lastRun ? <span className={`badge ${statusColor(lastRun.status)}`}>{lastRun.status==='running' && <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse-dot" />}{lastRun.status.toUpperCase()}</span> : '—'}</div>
-              <div className="stat-label">Last Run {lastRun ? formatRelative(lastRun.started_at) : ''}</div>
+              <div className="stat-label">Last Run {lastRun ? formatRelative(lastRun.status === 'running' ? lastRun.started_at : (lastRun.finished_at || lastRun.started_at)) : ''}</div>
             </div>
           </div>
 
