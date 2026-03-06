@@ -143,7 +143,3 @@ playwright install chromium
 
 - **Backend**: See `backend/README.md` (if present) and docstrings in `app/agents/`, `app/services/`, `app/orchestration/`.
 - **Spec**: This repo implements the hackathon spec: multi-agent pipeline, configurable sources, dedup, ranking, PDF, email, and minimal Web UI (dashboard, sources, runs, findings, digest archive).
-
-## License
-
-Use as per your hackathon rules.
