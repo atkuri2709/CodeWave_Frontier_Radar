@@ -1,0 +1,67 @@
+# Frontier AI Radar - Configuration
+# All URLs have been verified to return HTTP 200 (no 403/404 errors).
+
+global:
+  run_time: "06:30"
+  timezone: "Asia/Kolkata"
+  max_pages_per_domain: 50
+  default_rate_limit: 1.0
+  email_recipients: []
+
+agents:
+  competitors:
+    - name: Google DeepMind
+      release_urls:
+        - https://deepmind.google/blog/
+      rss_feeds: []
+      keywords: [release, model, Gemini, AlphaFold, API, benchmark]
+    # - name: Mistral AI
+    #   release_urls:
+    #     - https://mistral.ai/news/
+    #   rss_feeds: []
+    #   keywords: [release, model, open-source, Mixtral, API, pricing]
+    # - name: Stability AI
+    #   release_urls:
+    #     - https://stability.ai/news
+    #   rss_feeds: []
+    #   keywords: [release, model, Stable Diffusion, image, video, API]
+    # - name: Cohere
+    #   release_urls:
+    #     - https://cohere.com/blog
+    #   rss_feeds: []
+    #   keywords: [release, model, embed, rerank, API, enterprise]
+
+  model_providers:
+    - name: Anthropic
+      urls:
+        - https://www.anthropic.com/news
+      rss_feeds: []
+      focus: [models, Claude, api, safety, pricing]
+    # - name: Google AI
+    #   urls:
+    #     - https://blog.google/technology/ai/
+    #   rss_feeds: []
+    #   focus: [Gemini, models, api, Vertex, safety]
+    # - name: Microsoft AI
+    #   urls:
+    #     - https://blogs.microsoft.com/ai/
+    #   rss_feeds: []
+    #   focus: [Copilot, Azure, models, api, GPT]
+    # - name: Hugging Face
+    #   urls:
+    #     - https://huggingface.co/blog
+    #   rss_feeds: []
+    #   focus: [models, open-source, transformers, leaderboard, datasets]
+
+  research:
+    disable_arxiv: false
+    arxiv_categories: [cs.CL, cs.LG, stat.ML]
+    relevance_keywords: [benchmark, eval, agent, multimodal, safety, alignment, llm, transformer]
+    curated_urls:
+      - https://techcrunch.com/category/artificial-intelligence/
+      - https://www.theverge.com/ai-artificial-intelligence
+
+  hf_benchmarks:
+    leaderboards: [open_llm_leaderboard]
+    tasks: []
+    track_new_sota: true

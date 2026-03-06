@@ -1,0 +1,5 @@
+# Local SQLite database (local use only)
+data/
+*.db
+.venv/
+.env
