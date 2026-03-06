@@ -1,5 +1,6 @@
 """Findings API: list, filter by multiple dimensions, search, get by id."""
 
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -36,6 +37,12 @@ async def list_findings(
     min_confidence: Optional[float] = Query(
         None, ge=0, le=1, description="Minimum confidence score"
     ),
+    created_after: Optional[datetime] = Query(
+        None, description="Return findings created on or after this ISO datetime"
+    ),
+    created_before: Optional[datetime] = Query(
+        None, description="Return findings created before this ISO datetime"
+    ),
     limit: int = Query(100, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -52,6 +59,10 @@ async def list_findings(
         q = q.where(Finding.publisher.ilike(f"%{publisher}%"))
     if min_confidence is not None:
         q = q.where(Finding.confidence >= min_confidence)
+    if created_after is not None:
+        q = q.where(Finding.created_at >= created_after)
+    if created_before is not None:
+        q = q.where(Finding.created_at < created_before)
     if search:
         pattern = f"%{search}%"
         q = q.where(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { api, type FindingSummary } from '@/lib/api';
 import { useMeta } from '@/lib/useMeta';
 
@@ -10,6 +10,15 @@ function ConfidenceBadge({ value }: { value: number }) {
   const bg = value >= 0.75 ? 'bg-emerald-500' : value >= 0.55 ? 'bg-amber-500' : value >= 0.35 ? 'bg-orange-500' : 'bg-red-500';
   const label = value >= 0.75 ? 'High' : value >= 0.55 ? 'Medium' : value >= 0.35 ? 'Low' : 'Very Low';
   return (<span className={`flex items-center gap-2 text-xs font-medium ${color}`}><span className="confidence-meter"><span className={`confidence-fill ${bg}`} style={{ width: `${pct}%` }} /></span>{pct}% {label}</span>);
+}
+
+function startOfDayIST(daysAgo = 0): string {
+  const d = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(d.getTime() + istOffset);
+  istNow.setUTCHours(0, 0, 0, 0);
+  istNow.setUTCDate(istNow.getUTCDate() - daysAgo);
+  return new Date(istNow.getTime() - istOffset).toISOString();
 }
 
 function toIST(d: string) { return new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }); }
@@ -32,6 +41,8 @@ export default function FindingsPage() {
   const [tagFilter, setTagFilter] = useState('');
   const [search, setSearch] = useState('');
   const [diffMode, setDiffMode] = useState(false);
+  const [diffFindings, setDiffFindings] = useState<FindingSummary[]>([]);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -39,24 +50,56 @@ export default function FindingsPage() {
       .then(setFindings).catch(() => {}).finally(() => setLoading(false));
   }, [agentFilter, categoryFilter]);
 
+  const loadDiffData = useCallback(() => {
+    setDiffLoading(true);
+    const yesterdayStart = startOfDayIST(1);
+    api.findings.list({
+      agent_id: agentFilter || undefined,
+      category: categoryFilter || undefined,
+      created_after: yesterdayStart,
+      limit: 500,
+    })
+      .then(setDiffFindings)
+      .catch(() => {})
+      .finally(() => setDiffLoading(false));
+  }, [agentFilter, categoryFilter]);
+
+  useEffect(() => {
+    if (diffMode) loadDiffData();
+  }, [diffMode, loadDiffData]);
+
   const allEntities = useMemo(() => Array.from(new Set(findings.flatMap(f => f.entities || []))).sort(), [findings]);
   const allPublishers = useMemo(() => Array.from(new Set(findings.map(f => f.publisher).filter(Boolean) as string[])).sort(), [findings]);
   const allTags = useMemo(() => Array.from(new Set(findings.flatMap(f => f.tags || []))).sort(), [findings]);
 
-  const filtered = useMemo(() => {
-    let result = findings;
+  const applyLocalFilters = useCallback((list: FindingSummary[]) => {
+    let result = list;
     if (search.trim()) result = result.filter(f => f.title.toLowerCase().includes(search.toLowerCase()) || f.summary_short.toLowerCase().includes(search.toLowerCase()));
     if (entityFilter) result = result.filter(f => (f.entities || []).includes(entityFilter));
     if (publisherFilter) result = result.filter(f => f.publisher === publisherFilter);
     if (tagFilter) result = result.filter(f => (f.tags || []).includes(tagFilter));
     return result;
-  }, [findings, search, entityFilter, publisherFilter, tagFilter]);
+  }, [search, entityFilter, publisherFilter, tagFilter]);
 
-  const todayFindings = useMemo(() => filtered.filter(f => isToday(f.created_at)), [filtered]);
-  const yesterdayFindings = useMemo(() => filtered.filter(f => isYesterday(f.created_at)), [filtered]);
+  const filtered = useMemo(() => applyLocalFilters(findings), [findings, applyLocalFilters]);
+
+  const diffFiltered = useMemo(() => applyLocalFilters(diffFindings), [diffFindings, applyLocalFilters]);
+  const todayFindings = useMemo(() => diffFiltered.filter(f => isToday(f.created_at)), [diffFiltered]);
+  const yesterdayFindings = useMemo(() => diffFiltered.filter(f => isYesterday(f.created_at)), [diffFiltered]);
+
   const newToday = useMemo(() => {
-    const yTitles = new Set(yesterdayFindings.map(f => f.title));
-    return todayFindings.filter(f => !yTitles.has(f.title));
+    const yTitles = new Set(yesterdayFindings.map(f => f.title.toLowerCase().trim()));
+    return todayFindings.filter(f => !yTitles.has(f.title.toLowerCase().trim()));
+  }, [todayFindings, yesterdayFindings]);
+
+  const removedToday = useMemo(() => {
+    const tTitles = new Set(todayFindings.map(f => f.title.toLowerCase().trim()));
+    return yesterdayFindings.filter(f => !tTitles.has(f.title.toLowerCase().trim()));
+  }, [todayFindings, yesterdayFindings]);
+
+  const continuingFindings = useMemo(() => {
+    const yTitles = new Set(yesterdayFindings.map(f => f.title.toLowerCase().trim()));
+    return todayFindings.filter(f => yTitles.has(f.title.toLowerCase().trim()));
   }, [todayFindings, yesterdayFindings]);
 
   const hasActiveFilters = !!(agentFilter || categoryFilter || search || entityFilter || publisherFilter || tagFilter);
@@ -139,34 +182,59 @@ export default function FindingsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {loading || (diffMode && diffLoading) ? (
         <div className="space-y-3">{[1,2,3,4,5,6].map(i => <div key={i} className="h-28 skeleton" />)}</div>
       ) : diffMode ? (
         /* ====== DIFF VIEW ====== */
         <div className="space-y-6">
+          {/* Summary banner */}
+          <div className="glass-card p-4">
+            <div className="flex flex-wrap items-center gap-6 text-xs font-medium" style={{ color: '#6b7394' }}>
+              <span>Today: <strong style={{ color: '#1A2238' }}>{todayFindings.length}</strong> findings</span>
+              <span>Yesterday: <strong style={{ color: '#1A2238' }}>{yesterdayFindings.length}</strong> findings</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: '#22c55e' }} /> New: <strong style={{ color: '#22c55e' }}>{newToday.length}</strong></span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: '#ef4444' }} /> Removed: <strong style={{ color: '#ef4444' }}>{removedToday.length}</strong></span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: '#6366f1' }} /> Continuing: <strong style={{ color: '#6366f1' }}>{continuingFindings.length}</strong></span>
+            </div>
+          </div>
+
           {newToday.length > 0 && (
             <div>
               <div className="mb-3 flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full" style={{ background: '#FF6A3D' }} />
+                <div className="h-2 w-2 rounded-full" style={{ background: '#22c55e' }} />
                 <h2 className="text-sm font-bold" style={{ color: '#1A2238' }}>New Today ({newToday.length})</h2>
-                <span className="text-[10px]" style={{ color: '#9ba2bc' }}>Not seen yesterday</span>
+                <span className="text-[10px]" style={{ color: '#9ba2bc' }}>Appeared today, not seen yesterday</span>
               </div>
               <div className="stagger-children space-y-3">{newToday.map(f => renderFinding(f, true))}</div>
             </div>
           )}
-          {yesterdayFindings.length > 0 && (
+
+          {removedToday.length > 0 && (
             <div>
               <div className="mb-3 flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full" style={{ background: '#9ba2bc' }} />
-                <h2 className="text-sm font-bold" style={{ color: '#1A2238' }}>Yesterday ({yesterdayFindings.length})</h2>
+                <div className="h-2 w-2 rounded-full" style={{ background: '#ef4444' }} />
+                <h2 className="text-sm font-bold" style={{ color: '#1A2238' }}>Removed from Today ({removedToday.length})</h2>
+                <span className="text-[10px]" style={{ color: '#9ba2bc' }}>Present yesterday but not today</span>
               </div>
-              <div className="stagger-children space-y-3" style={{ opacity: 0.7 }}>{yesterdayFindings.map(f => renderFinding(f, false))}</div>
+              <div className="stagger-children space-y-3" style={{ opacity: 0.6 }}>{removedToday.map(f => renderFinding(f, false))}</div>
             </div>
           )}
-          {newToday.length === 0 && yesterdayFindings.length === 0 && (
+
+          {continuingFindings.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full" style={{ background: '#6366f1' }} />
+                <h2 className="text-sm font-bold" style={{ color: '#1A2238' }}>Continuing ({continuingFindings.length})</h2>
+                <span className="text-[10px]" style={{ color: '#9ba2bc' }}>Present both yesterday and today</span>
+              </div>
+              <div className="stagger-children space-y-3" style={{ opacity: 0.8 }}>{continuingFindings.map(f => renderFinding(f, false))}</div>
+            </div>
+          )}
+
+          {todayFindings.length === 0 && yesterdayFindings.length === 0 && (
             <div className="glass-card"><div className="empty-state">
               <p className="text-sm font-semibold" style={{ color: '#3d4660' }}>No data for diff comparison</p>
-              <p className="text-xs" style={{ color: '#6b7394' }}>Need findings from both today and yesterday.</p>
+              <p className="text-xs" style={{ color: '#6b7394' }}>Need findings from today or yesterday to compare.</p>
             </div></div>
           )}
         </div>

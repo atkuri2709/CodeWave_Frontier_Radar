@@ -159,11 +159,14 @@ export const api = {
     delete: (id: number) => fetch(`${API_BASE}/sources/${id}`, { method: 'DELETE' }),
   },
   findings: {
-    list: (params?: { run_id?: number; agent_id?: string; category?: string }) => {
+    list: (params?: { run_id?: number; agent_id?: string; category?: string; created_after?: string; created_before?: string; limit?: number }) => {
       const q = new URLSearchParams();
       if (params?.run_id) q.set('run_id', String(params.run_id));
       if (params?.agent_id) q.set('agent_id', params.agent_id);
       if (params?.category) q.set('category', params.category);
+      if (params?.created_after) q.set('created_after', params.created_after);
+      if (params?.created_before) q.set('created_before', params.created_before);
+      if (params?.limit) q.set('limit', String(params.limit));
       return fetchApi<FindingSummary[]>(`/findings/?${q}`);
     },
   },
