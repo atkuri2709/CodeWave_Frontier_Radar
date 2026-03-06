@@ -146,9 +146,9 @@ export default function SourcesPage() {
         }
       } else {
         const newConfig = await api.pipelineConfigs.create({
-          pipeline_name: form.pipeline_name.trim(),
-          pipeline_description: form.pipeline_description.trim() || undefined,
-        });
+            pipeline_name: form.pipeline_name.trim(),
+            pipeline_description: form.pipeline_description.trim() || undefined,
+          });
         pipelineId = newConfig.id;
       }
 
@@ -253,18 +253,18 @@ export default function SourcesPage() {
           <h2 className="text-base font-bold" style={{ color: '#1A2238' }}>{editingConfigId ? 'Edit Pipeline' : 'New Pipeline'}</h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
+                <div>
               <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Name <span className="text-red-500">*</span></label>
               <input type="text" placeholder="e.g. Morning Intelligence Sweep" required value={form.pipeline_name} onChange={e => setForm({ ...form, pipeline_name: e.target.value })} className="input-field" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Description</label>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold" style={{ color: '#6b7394' }}>Pipeline Description</label>
               <input type="text" placeholder="e.g. Track competitor releases and model updates" value={form.pipeline_description} onChange={e => setForm({ ...form, pipeline_description: e.target.value })} className="input-field" />
             </div>
           </div>
 
           {/* Source rows table */}
-          <div>
+            <div>
             <div className="mb-2 flex items-center justify-between">
               <label className="text-xs font-semibold" style={{ color: '#6b7394' }}>Sources <span className="text-red-500">*</span></label>
               <button type="button" onClick={addRow} className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors hover:bg-indigo-50" style={{ color: '#7580d4' }}>
@@ -299,9 +299,9 @@ export default function SourcesPage() {
                       className="w-full rounded-lg border-0 bg-transparent px-1 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-200"
                       style={{ color: '#3d4660' }}
                     >
-                      {AGENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
+                {AGENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
                   <div className="flex items-center justify-center">
                     <button
                       type="button"
@@ -311,8 +311,8 @@ export default function SourcesPage() {
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
-                  </div>
-                </div>
+            </div>
+            </div>
               ))}
             </div>
 
@@ -425,12 +425,12 @@ export default function SourcesPage() {
             <>
               <h3 className="text-xs font-bold uppercase tracking-wider pt-2" style={{ color: '#6b7394' }}>Unlinked Sources</h3>
               {orphanSources.map(s => (
-                <div key={s.id} className="glass-card p-4 sm:px-5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: 'rgba(26,34,56,0.04)' }}>
-                      <svg className="h-5 w-5" style={{ color: '#9ba2bc' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
-                    </div>
-                    <div className="min-w-0 flex-1">
+            <div key={s.id} className="glass-card p-4 sm:px-5">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: 'rgba(26,34,56,0.04)' }}>
+                  <svg className="h-5 w-5" style={{ color: '#9ba2bc' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
+                </div>
+                <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold" style={{ color: '#1A2238' }}>
                         {s.name || (() => { try { return new URL(s.url.trim()).hostname; } catch { return s.url.trim(); } })()}
                       </div>
