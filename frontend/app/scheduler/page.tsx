@@ -64,7 +64,7 @@ export default function SchedulerPage() {
     setStatus(s);
     setPipelines(pcs);
     const allNames = new Set([...names, ...pcs.map(p => p.pipeline_name)]);
-    setPipelineNames([...allNames].sort());
+    setPipelineNames(Array.from(allNames).sort());
   }, []);
 
   useEffect(() => {

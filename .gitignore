@@ -15,6 +15,7 @@ venv/
 *.db
 backend/data/
 backend/output/
+backend/storage/
 
 # Node / Next.js
 node_modules/
@@ -37,6 +38,9 @@ desktop.ini
 
 # Logs
 *.log
+
+# Docker
+docker-compose.override.yml
 
 # Misc
 *.bak
