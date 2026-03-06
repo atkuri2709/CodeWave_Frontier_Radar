@@ -28,32 +28,96 @@ HEATMAP_TOPICS = [
 
 _TOPIC_KEYWORDS: dict[str, list[str]] = {
     "models": [
-        "model", "llm", "gpt", "claude", "gemini", "llama", "mistral",
-        "foundation model", "language model", "multimodal", "vision",
-        "embedding", "fine-tune", "training", "weights", "parameters",
+        "model",
+        "llm",
+        "gpt",
+        "claude",
+        "gemini",
+        "llama",
+        "mistral",
+        "foundation model",
+        "language model",
+        "multimodal",
+        "vision",
+        "embedding",
+        "fine-tune",
+        "training",
+        "weights",
+        "parameters",
     ],
     "research": [
-        "research", "paper", "arxiv", "study", "publication", "findings",
-        "experiment", "methodology", "novel", "approach", "technique",
+        "research",
+        "paper",
+        "arxiv",
+        "study",
+        "publication",
+        "findings",
+        "experiment",
+        "methodology",
+        "novel",
+        "approach",
+        "technique",
     ],
     "benchmarks": [
-        "benchmark", "leaderboard", "evaluation", "score", "ranking",
-        "performance", "accuracy", "sota", "state-of-the-art", "mmlu",
-        "hellaswag", "humaneval", "gsm8k", "math", "arena",
+        "benchmark",
+        "leaderboard",
+        "evaluation",
+        "score",
+        "ranking",
+        "performance",
+        "accuracy",
+        "sota",
+        "state-of-the-art",
+        "mmlu",
+        "hellaswag",
+        "humaneval",
+        "gsm8k",
+        "math",
+        "arena",
     ],
     "pricing": [
-        "pricing", "cost", "price", "token", "api pricing", "subscription",
-        "free tier", "enterprise", "billing", "rate limit",
+        "pricing",
+        "cost",
+        "price",
+        "token",
+        "api pricing",
+        "subscription",
+        "free tier",
+        "enterprise",
+        "billing",
+        "rate limit",
     ],
     "safety": [
-        "safety", "alignment", "guardrail", "red team", "jailbreak",
-        "responsible", "ethics", "bias", "toxicity", "moderation",
-        "content filter", "harm", "risk",
+        "safety",
+        "alignment",
+        "guardrail",
+        "red team",
+        "jailbreak",
+        "responsible",
+        "ethics",
+        "bias",
+        "toxicity",
+        "moderation",
+        "content filter",
+        "harm",
+        "risk",
     ],
     "tooling": [
-        "tool", "api", "sdk", "plugin", "integration", "framework",
-        "library", "platform", "developer", "agent", "function calling",
-        "rag", "retrieval", "deployment", "inference",
+        "tool",
+        "api",
+        "sdk",
+        "plugin",
+        "integration",
+        "framework",
+        "library",
+        "platform",
+        "developer",
+        "agent",
+        "function calling",
+        "rag",
+        "retrieval",
+        "deployment",
+        "inference",
     ],
 }
 
@@ -68,9 +132,7 @@ def _classify_topics(text: str, tags: list[str]) -> list[str]:
     return matched if matched else ["research"]
 
 
-async def get_sota_findings(
-    db: AsyncSession, limit: int = 20
-) -> List[Dict[str, Any]]:
+async def get_sota_findings(db: AsyncSession, limit: int = 20) -> List[Dict[str, Any]]:
     """Return the most recent SOTA findings ordered by date."""
     q = (
         select(Finding)
@@ -86,9 +148,7 @@ async def get_sota_findings(
             "title": f.title,
             "entities": f.entities or [],
             "source_url": f.source_url,
-            "date_detected": (
-                f.date_detected.isoformat() if f.date_detected else None
-            ),
+            "date_detected": (f.date_detected.isoformat() if f.date_detected else None),
             "confidence": f.confidence,
             "sota_confidence": f.sota_confidence,
             "category": f.category,
@@ -99,9 +159,7 @@ async def get_sota_findings(
     ]
 
 
-async def get_entity_heatmap(
-    db: AsyncSession, days: int = 7
-) -> Dict[str, Any]:
+async def get_entity_heatmap(db: AsyncSession, days: int = 7) -> Dict[str, Any]:
     """Build entity-vs-topic frequency matrix from recent findings.
 
     Returns:
@@ -121,9 +179,16 @@ async def get_entity_heatmap(
     )
 
     for f in rows:
-        combined_text = " ".join(filter(None, [
-            f.title, f.summary_short, f.summary_long,
-        ]))
+        combined_text = " ".join(
+            filter(
+                None,
+                [
+                    f.title,
+                    f.summary_short,
+                    f.summary_long,
+                ],
+            )
+        )
         tags = f.tags or []
         topics = _classify_topics(combined_text, tags)
 

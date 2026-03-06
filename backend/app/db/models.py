@@ -15,7 +15,10 @@ class Source(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     pipeline_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("pipeline_configs.id", ondelete="CASCADE"), nullable=True, index=True
+        Integer,
+        ForeignKey("pipeline_configs.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
     url: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     agent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
@@ -94,7 +97,8 @@ class PipelineConfig(Base):
     )
 
     sources: Mapped[list["Source"]] = relationship(
-        back_populates="pipeline", foreign_keys="Source.pipeline_id",
+        back_populates="pipeline",
+        foreign_keys="Source.pipeline_id",
         cascade="all, delete-orphan",
     )
 
@@ -183,7 +187,9 @@ class Finding(Base):
     agent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     raw_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     impact_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    is_sota: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
+    is_sota: Mapped[Optional[bool]] = mapped_column(
+        Boolean, nullable=True, default=False
+    )
     sota_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
         UTCDateTime(timezone=True), server_default=func.now()
@@ -223,7 +229,9 @@ class LogEntry(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("runs.id"), nullable=False, index=True
     )
-    timestamp: Mapped[datetime] = mapped_column(UTCDateTime(timezone=True), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(
+        UTCDateTime(timezone=True), nullable=False
+    )
     level: Mapped[str] = mapped_column(String(16), nullable=False, default="INFO")
     logger_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)

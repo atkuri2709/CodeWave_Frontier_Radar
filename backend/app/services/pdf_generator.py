@@ -620,8 +620,8 @@ class PDFGenerator:
                     ),
                     Paragraph(
                         f'<font color="#64748B">Entity: {ent_str}  |  '
-                        f'Confidence: {sf.confidence:.2f}  |  '
-                        f'SOTA Confidence: {(sf.sota_confidence or 0):.2f}</font>',
+                        f"Confidence: {sf.confidence:.2f}  |  "
+                        f"SOTA Confidence: {(sf.sota_confidence or 0):.2f}</font>",
                         st["meta"],
                     ),
                     Paragraph(

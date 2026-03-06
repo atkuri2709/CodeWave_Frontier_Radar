@@ -494,7 +494,7 @@ class SummarizerService:
         publisher = hints.get("publisher")
         publisher_line = f"\nPublisher: {publisher}" if publisher else ""
 
-        return f"""Summarize this content for a daily AI/ML intelligence digest. Be factual; do not invent numbers. Be thorough and detailed — do NOT truncate or shorten your analysis.
+        return f"""Summarize this content for a daily AI/ML intelligence digest. Highlight only the most important updates, key facts, and strategic insights.
 
 Title: {title}
 Source: {source_url}

@@ -223,13 +223,19 @@ class RunManager:
                 "global": {},
                 "agents": config_override.get("agents", config_override),
             }
-            config = await merge_sources_into_config(config, pipeline_name=pipeline_name)
+            config = await merge_sources_into_config(
+                config, pipeline_name=pipeline_name
+            )
         elif use_yaml:
             config = load_radar_config(full=True)
-            config = await merge_sources_into_config(config, pipeline_name=pipeline_name)
+            config = await merge_sources_into_config(
+                config, pipeline_name=pipeline_name
+            )
         else:
             config = load_radar_config()
-            config = await merge_sources_into_config(config, pipeline_name=pipeline_name)
+            config = await merge_sources_into_config(
+                config, pipeline_name=pipeline_name
+            )
         agents = config.get("agents", {}) or {}
         research = (
             agents.get("research") if isinstance(agents.get("research"), dict) else {}
@@ -448,12 +454,21 @@ class RunManager:
                     raw_entities = f.entities if isinstance(f.entities, list) else []
                     normalized_ents = normalize_entities(raw_entities)
 
-                    sota_text = " ".join(filter(None, [
-                        f.title, f.summary_long, f.evidence,
-                    ]))
+                    sota_text = " ".join(
+                        filter(
+                            None,
+                            [
+                                f.title,
+                                f.summary_long,
+                                f.evidence,
+                            ],
+                        )
+                    )
                     sota_result = detect_sota_claim(sota_text)
                     if sota_result["is_sota"]:
-                        logger.info("SOTA detected in finding: %s", (f.title or "")[:80])
+                        logger.info(
+                            "SOTA detected in finding: %s", (f.title or "")[:80]
+                        )
 
                     finding = Finding(
                         run_id=run_id,
@@ -475,7 +490,11 @@ class RunManager:
                         raw_metadata=f.raw_metadata,
                         impact_score=_impact_score(f),
                         is_sota=sota_result["is_sota"],
-                        sota_confidence=sota_result["confidence"] if sota_result["is_sota"] else None,
+                        sota_confidence=(
+                            sota_result["confidence"]
+                            if sota_result["is_sota"]
+                            else None
+                        ),
                     )
                     session.add(finding)
                     saved_findings += 1

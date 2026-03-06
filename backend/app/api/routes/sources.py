@@ -72,9 +72,7 @@ async def create_source(
     if not cleaned:
         raise HTTPException(status_code=400, detail="URL is required")
     agent_id = body.agent_id or detect_agent(cleaned)
-    keywords = (
-        body.keywords if body.keywords else DEFAULT_KEYWORDS.get(agent_id, [])
-    )
+    keywords = body.keywords if body.keywords else DEFAULT_KEYWORDS.get(agent_id, [])
     s = Source(
         pipeline_id=body.pipeline_id,
         url=cleaned,

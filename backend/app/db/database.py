@@ -28,6 +28,7 @@ class UTCDateTime(TypeDecorator):
             return value.replace(tzinfo=timezone.utc)
         return value
 
+
 settings = get_settings()
 
 # Ensure local SQLite file path exists (backend/data/ when run from backend)

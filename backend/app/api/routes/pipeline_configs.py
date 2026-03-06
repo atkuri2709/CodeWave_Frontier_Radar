@@ -9,7 +9,11 @@ from sqlalchemy.orm import selectinload
 
 from app.db.database import get_db
 from app.db.models import PipelineConfig
-from app.schemas.run import PipelineConfigCreate, PipelineConfigOut, PipelineConfigUpdate
+from app.schemas.run import (
+    PipelineConfigCreate,
+    PipelineConfigOut,
+    PipelineConfigUpdate,
+)
 
 router = APIRouter()
 
