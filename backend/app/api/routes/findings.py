@@ -98,6 +98,8 @@ async def list_findings(
             tags=f.tags or [],
             entities=f.entities or [],
             impact_score=f.impact_score,
+            is_sota=f.is_sota,
+            sota_confidence=f.sota_confidence,
             created_at=f.created_at or f.date_detected,
         )
         for f in rows
@@ -132,5 +134,7 @@ async def get_finding(
         agent_id=f.agent_id,
         raw_metadata=f.raw_metadata,
         impact_score=f.impact_score,
+        is_sota=f.is_sota,
+        sota_confidence=f.sota_confidence,
         created_at=f.created_at,
     )

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { api, type FindingSummary, type Run } from '@/lib/api';
+import { api, type FindingSummary, type Run, type SOTAFinding, type EntityHeatmapData } from '@/lib/api';
 import { useMeta } from '@/lib/useMeta';
 
 function startOfDayIST(daysAgo = 0): string {
@@ -27,6 +27,12 @@ export default function AnalyticsPage() {
   const [diffFindings, setDiffFindings] = useState<FindingSummary[]>([]);
   const [diffLoading, setDiffLoading] = useState(true);
 
+  const [sotaFindings, setSotaFindings] = useState<SOTAFinding[]>([]);
+  const [sotaLoading, setSotaLoading] = useState(true);
+
+  const [heatmapData, setHeatmapData] = useState<EntityHeatmapData | null>(null);
+  const [heatmapLoading, setHeatmapLoading] = useState(true);
+
   useEffect(() => {
     Promise.all([api.findings.list({}), api.runs.list()])
       .then(([f, r]) => { setFindings(f); setRuns(r); })
@@ -39,6 +45,22 @@ export default function AnalyticsPage() {
       .then(setDiffFindings)
       .catch(() => {})
       .finally(() => setDiffLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setSotaLoading(true);
+    api.analytics.sotaWatch(20)
+      .then(setSotaFindings)
+      .catch(() => {})
+      .finally(() => setSotaLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setHeatmapLoading(true);
+    api.analytics.entityHeatmap(7)
+      .then(setHeatmapData)
+      .catch(() => {})
+      .finally(() => setHeatmapLoading(false));
   }, []);
 
   const tabs = [
@@ -72,8 +94,8 @@ export default function AnalyticsPage() {
       {loading ? <div className="h-96 skeleton rounded-2xl" /> : (
         <>
           {activeTab === 'diff' && <DiffViewer findings={diffFindings} loading={diffLoading} />}
-          {activeTab === 'sota' && <SOTAWatch findings={findings} runs={runs} />}
-          {activeTab === 'heatmap' && <EntityHeatmap findings={findings} />}
+          {activeTab === 'sota' && <SOTAWatch sotaFindings={sotaFindings} runs={runs} loading={sotaLoading} />}
+          {activeTab === 'heatmap' && <EntityHeatmap data={heatmapData} loading={heatmapLoading} />}
         </>
       )}
     </div>
@@ -176,9 +198,9 @@ function DiffViewer({ findings, loading }: { findings: FindingSummary[]; loading
 }
 
 /* ============== SOTA WATCH ============== */
-function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[] }) {
-  const { agentLabel, agentIds } = useMeta();
-  const benchmarkFindings = findings.filter(f => f.category === 'benchmark');
+function SOTAWatch({ sotaFindings, runs, loading }: { sotaFindings: SOTAFinding[]; runs: Run[]; loading: boolean }) {
+  const { agentLabel } = useMeta();
+
   const sortedRuns = [...runs].sort((a, b) => new Date(a.started_at || '').getTime() - new Date(b.started_at || '').getTime());
   const runData = sortedRuns.map(r => ({
     id: r.id,
@@ -189,7 +211,7 @@ function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[]
 
   return (
     <div className="space-y-5">
-      {/* Chart */}
+      {/* Findings Over Runs Chart */}
       <div className="glass-card p-5">
         <h3 className="text-sm font-bold mb-4" style={{ color: '#1A2238' }}>Total Findings Over Runs</h3>
         {runData.length === 0 ? (
@@ -211,26 +233,44 @@ function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[]
         )}
       </div>
 
-      {/* Benchmark findings list */}
+      {/* SOTA Findings from backend API */}
       <div className="glass-card overflow-hidden">
         <div className="flex items-center justify-between border-b px-5 py-3" style={{ borderColor: 'rgba(26,34,56,0.06)' }}>
-          <h3 className="text-sm font-bold" style={{ color: '#1A2238' }}>SOTA Benchmark Findings ({benchmarkFindings.length})</h3>
+          <h3 className="text-sm font-bold" style={{ color: '#1A2238' }}>
+            SOTA Findings ({loading ? '...' : sotaFindings.length})
+          </h3>
+          <span className="rounded-lg px-2 py-0.5 text-[9px] font-bold uppercase" style={{ background: 'rgba(244,219,125,0.15)', color: '#b8860b' }}>
+            State-of-the-Art Claims
+          </span>
         </div>
-        {benchmarkFindings.length === 0 ? (
-          <div className="empty-state py-8"><p className="text-xs" style={{ color: '#6b7394' }}>No benchmark findings yet. Add leaderboard URLs as sources.</p></div>
+        {loading ? (
+          <div className="h-48 skeleton rounded-b-2xl" />
+        ) : sotaFindings.length === 0 ? (
+          <div className="empty-state py-8"><p className="text-xs" style={{ color: '#6b7394' }}>No SOTA claims detected yet. Run the pipeline with benchmark sources.</p></div>
         ) : (
           <ul className="divide-y" style={{ '--tw-divide-color': 'rgba(26,34,56,0.04)' } as React.CSSProperties}>
-            {benchmarkFindings.map(f => (
+            {sotaFindings.map(f => (
               <li key={f.id}>
                 <a href={f.source_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[rgba(157,170,242,0.04)]">
                   <svg className="h-4 w-4 shrink-0" style={{ color: '#F4DB7D' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.996.144-1.708.412-2.237.803-.53.392-.774.898-.774 1.432 0 .534.245 1.04.774 1.432.529.39 1.24.659 2.237.803M18.75 4.236c.997.144 1.708.412 2.237.803.53.392.775.898.775 1.432 0 .534-.245 1.04-.775 1.432-.529.39-1.24.659-2.237.803" /></svg>
                   <div className="min-w-0 flex-1">
                     <span className="text-sm font-medium line-clamp-1 hover:text-[#FF6A3D]" style={{ color: '#1A2238' }}>{f.title}</span>
-                    <p className="line-clamp-1 text-xs" style={{ color: '#6b7394' }}>{f.summary_short}</p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                      <p className="line-clamp-1 text-xs" style={{ color: '#6b7394' }}>{f.summary_short}</p>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {f.entities.slice(0, 3).map(e => (
+                        <span key={e} className="rounded-md px-1.5 py-0.5 text-[9px] font-semibold" style={{ background: 'rgba(157,170,242,0.1)', color: '#4c5aad' }}>{e}</span>
+                      ))}
+                      <span className="text-[10px] font-medium" style={{ color: '#6b7394' }}>{agentLabel(f.agent_id)}</span>
+                      {f.date_detected && (
+                        <span className="text-[10px]" style={{ color: '#9ba2bc' }}>{new Date(f.date_detected).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', timeZone: 'Asia/Kolkata' })}</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-0.5">
                     <span className="text-[10px] font-bold" style={{ color: '#FF6A3D' }}>{f.confidence.toFixed(2)}</span>
-                    {f.impact_score != null && <span className="text-[9px] font-bold" style={{ color: '#b8860b' }}>Impact {f.impact_score.toFixed(2)}</span>}
+                    {f.sota_confidence != null && <span className="text-[9px] font-bold" style={{ color: '#b8860b' }}>SOTA {f.sota_confidence.toFixed(2)}</span>}
                   </div>
                 </a>
               </li>
@@ -243,66 +283,47 @@ function SOTAWatch({ findings, runs }: { findings: FindingSummary[]; runs: Run[]
 }
 
 /* ============== ENTITY HEATMAP ============== */
-function EntityHeatmap({ findings }: { findings: FindingSummary[] }) {
-  const { matrix, publishers, topics, maxCount } = useMemo(() => {
-    const pubSet = new Set<string>();
-    const topicSet = new Set<string>();
-    const countMap: Record<string, number> = {};
+function EntityHeatmap({ data, loading }: { data: EntityHeatmapData | null; loading: boolean }) {
+  if (loading) return <div className="h-64 skeleton rounded-2xl" />;
 
-    for (const f of findings) {
-      const pub = f.publisher || f.agent_id;
-      pubSet.add(pub);
-      for (const tag of (f.tags || []).slice(0, 5)) {
-        topicSet.add(tag);
-        const key = `${pub}|||${tag}`;
-        countMap[key] = (countMap[key] || 0) + 1;
-      }
-      if ((f.tags || []).length === 0) {
-        const cat = f.category || 'other';
-        topicSet.add(cat);
-        const key = `${pub}|||${cat}`;
-        countMap[key] = (countMap[key] || 0) + 1;
-      }
-    }
-    const publishers = Array.from(pubSet).sort();
-    const topics = Array.from(topicSet).sort();
-    let maxCount = 0;
-    const matrix: number[][] = publishers.map(p => topics.map(t => { const c = countMap[`${p}|||${t}`] || 0; if (c > maxCount) maxCount = c; return c; }));
-    return { matrix, publishers, topics, maxCount };
-  }, [findings]);
+  if (!data || data.entities.length === 0 || data.topics.length === 0) {
+    return <div className="glass-card"><div className="empty-state"><p className="text-sm font-semibold" style={{ color: '#3d4660' }}>Not enough data for heatmap</p><p className="text-xs" style={{ color: '#6b7394' }}>Run the pipeline with multiple sources to generate entity-topic data.</p></div></div>;
+  }
+
+  const { entities, topics, matrix } = data;
+  const maxCount = Math.max(1, ...matrix.flat());
 
   const cellColor = (count: number) => {
     if (count === 0) return 'rgba(26,34,56,0.03)';
-    const intensity = count / Math.max(1, maxCount);
+    const intensity = count / maxCount;
     if (intensity < 0.25) return `rgba(255,106,61,0.12)`;
     if (intensity < 0.5) return `rgba(255,106,61,0.25)`;
     if (intensity < 0.75) return `rgba(255,106,61,0.45)`;
     return `rgba(255,106,61,0.7)`;
   };
   const textColor = (count: number) => {
-    const intensity = count / Math.max(1, maxCount);
+    const intensity = count / maxCount;
     return intensity >= 0.5 ? '#ffffff' : '#1A2238';
   };
 
-  if (publishers.length === 0 || topics.length === 0) {
-    return <div className="glass-card"><div className="empty-state"><p className="text-sm font-semibold" style={{ color: '#3d4660' }}>Not enough data for heatmap</p><p className="text-xs" style={{ color: '#6b7394' }}>Run the pipeline with multiple sources to generate entity-topic data.</p></div></div>;
-  }
-
   return (
     <div className="glass-card overflow-x-auto p-5">
-      <h3 className="text-sm font-bold mb-4" style={{ color: '#1A2238' }}>Providers vs Topics</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-bold" style={{ color: '#1A2238' }}>Entity vs Topic (Last 7 Days)</h3>
+        <span className="text-[10px] font-medium" style={{ color: '#9ba2bc' }}>{entities.length} entities &middot; {topics.length} topics</span>
+      </div>
       <table className="w-full text-[11px]">
         <thead>
           <tr>
-            <th className="sticky left-0 z-10 px-3 py-2 text-left font-semibold" style={{ color: '#6b7394', background: '#ffffff' }}>Provider / Topic</th>
-            {topics.map(t => <th key={t} className="px-2 py-2 text-center font-semibold" style={{ color: '#6b7394', maxWidth: '80px' }}><span className="line-clamp-1">{t}</span></th>)}
+            <th className="sticky left-0 z-10 px-3 py-2 text-left font-semibold" style={{ color: '#6b7394', background: '#ffffff' }}>Entity / Topic</th>
+            {topics.map(t => <th key={t} className="px-2 py-2 text-center font-semibold capitalize" style={{ color: '#6b7394', maxWidth: '80px' }}><span className="line-clamp-1">{t}</span></th>)}
           </tr>
         </thead>
         <tbody>
-          {publishers.map((pub, pi) => (
-            <tr key={pub}>
-              <td className="sticky left-0 z-10 whitespace-nowrap px-3 py-2 font-semibold" style={{ color: '#1A2238', background: '#ffffff' }}>{pub}</td>
-              {matrix[pi].map((count, ti) => (
+          {entities.map((ent, ei) => (
+            <tr key={ent}>
+              <td className="sticky left-0 z-10 whitespace-nowrap px-3 py-2 font-semibold" style={{ color: '#1A2238', background: '#ffffff' }}>{ent}</td>
+              {matrix[ei].map((count, ti) => (
                 <td key={ti} className="px-2 py-2 text-center">
                   <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold transition-all"
                     style={{ background: cellColor(count), color: textColor(count) }}>
@@ -321,7 +342,7 @@ function EntityHeatmap({ findings }: { findings: FindingSummary[] }) {
             <div key={i} className="h-4 w-8 rounded" style={{ background: `rgba(255,106,61,${op})` }} />
           ))}
         </div>
-        <span>Low → High</span>
+        <span>Low &rarr; High</span>
       </div>
     </div>
   );

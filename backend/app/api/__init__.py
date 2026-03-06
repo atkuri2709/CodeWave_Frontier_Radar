@@ -11,6 +11,7 @@ from app.api.routes import (
     logs,
     pipeline_configs,
     meta,
+    analytics,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -28,3 +29,4 @@ api_router.include_router(
     pipeline_configs.router, prefix="/pipeline-configs", tags=["pipeline-configs"]
 )
 api_router.include_router(meta.router, prefix="/meta", tags=["meta"])
+api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])

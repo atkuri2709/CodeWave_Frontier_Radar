@@ -53,6 +53,8 @@ class FindingOut(FindingCreate):
     id: int
     run_id: Optional[int] = None
     impact_score: Optional[float] = None
+    is_sota: Optional[bool] = None
+    sota_confidence: Optional[float] = None
     created_at: datetime
 
     class Config:
@@ -73,4 +75,6 @@ class FindingSummary(BaseModel):
     tags: List[str] = []
     entities: List[str] = []
     impact_score: Optional[float] = None
+    is_sota: Optional[bool] = None
+    sota_confidence: Optional[float] = None
     created_at: datetime

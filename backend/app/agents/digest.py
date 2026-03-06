@@ -89,6 +89,8 @@ class DigestAgent(BaseAgent):
                 agent_id=f.agent_id,
                 run_id=f.run_id,
                 impact_score=f.impact_score,
+                is_sota=f.is_sota,
+                sota_confidence=f.sota_confidence,
                 created_at=f.created_at or datetime.now(timezone.utc),
             )
             for f in findings_orm
@@ -179,6 +181,8 @@ class DigestAgent(BaseAgent):
         else:
             why_it_matters = ""
 
+        sota_findings = [fo for fo in findings_out if fo.is_sota][:5]
+
         report_date = datetime.now(timezone.utc)
         pdf_path = self.pdf.generate(
             run_id=run_id,
@@ -188,6 +192,7 @@ class DigestAgent(BaseAgent):
             why_it_matters=why_it_matters,
             findings_by_section=findings_by_section,
             top_findings=top7,
+            sota_findings=sota_findings,
         )
         digest = DigestModel(
             run_id=run_id,

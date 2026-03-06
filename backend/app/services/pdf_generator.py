@@ -391,6 +391,7 @@ class PDFGenerator:
         why_it_matters: str,
         findings_by_section: dict[str, List[FindingOut]],
         top_findings: Optional[List[FindingOut]] = None,
+        sota_findings: Optional[List[FindingOut]] = None,
     ) -> str:
         buf = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -593,6 +594,43 @@ class PDFGenerator:
                 flow.append(KeepTogether(card))
                 flow.append(Spacer(1, 0.06 * inch))
 
+            flow.append(PageBreak())
+
+        # =====================================================================
+        # SOTA WATCH
+        # =====================================================================
+        if sota_findings:
+            flow.append(Paragraph("SOTA Watch", st["h1"]))
+            flow.append(_accent_rule())
+            flow.append(
+                Paragraph(
+                    f"{len(sota_findings)} finding(s) in this run claim state-of-the-art results.",
+                    st["body_sm"],
+                )
+            )
+            flow.append(Spacer(1, 0.12 * inch))
+            for si, sf in enumerate(sota_findings, 1):
+                sf_url = str(sf.source_url)
+                ent_str = ", ".join((sf.entities or [])[:5]) or "—"
+                sota_block = [
+                    Paragraph(
+                        f'<font color="#0F172A"><b>{si}. {sf.title}</b></font>  '
+                        f'<font color="#94A3B8" size="8">[{sf.category}]</font>',
+                        st["body_sm"],
+                    ),
+                    Paragraph(
+                        f'<font color="#64748B">Entity: {ent_str}  |  '
+                        f'Confidence: {sf.confidence:.2f}  |  '
+                        f'SOTA Confidence: {(sf.sota_confidence or 0):.2f}</font>',
+                        st["meta"],
+                    ),
+                    Paragraph(
+                        f'<a href="{sf_url}" color="#2563EB">{sf_url}</a>',
+                        st["meta"],
+                    ),
+                    _light_rule(),
+                ]
+                flow.append(KeepTogether(sota_block))
             flow.append(PageBreak())
 
         # =====================================================================

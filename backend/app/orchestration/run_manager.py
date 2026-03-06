@@ -22,6 +22,8 @@ from app.schemas.finding import FindingCreate
 from app.schemas.run import RunStatus
 from app.services.dedup import DedupService
 from app.services.run_logger import RunLogCollector
+from app.utils.entity_normalizer import normalize_entities
+from app.utils.sota_detection import detect_sota_claim
 
 logger = logging.getLogger(__name__)
 
@@ -442,6 +444,17 @@ class RunManager:
                         )
 
                     summary_short = (f.summary_short or f.title or "")[:1024]
+
+                    raw_entities = f.entities if isinstance(f.entities, list) else []
+                    normalized_ents = normalize_entities(raw_entities)
+
+                    sota_text = " ".join(filter(None, [
+                        f.title, f.summary_long, f.evidence,
+                    ]))
+                    sota_result = detect_sota_claim(sota_text)
+                    if sota_result["is_sota"]:
+                        logger.info("SOTA detected in finding: %s", (f.title or "")[:80])
+
                     finding = Finding(
                         run_id=run_id,
                         source_id=source_id,
@@ -456,11 +469,13 @@ class RunManager:
                         evidence=f.evidence,
                         confidence=round(min(0.95, max(0.0, f.confidence)), 2),
                         tags=f.tags if isinstance(f.tags, list) else [],
-                        entities=f.entities if isinstance(f.entities, list) else [],
+                        entities=normalized_ents,
                         diff_hash=f.diff_hash[:64] if f.diff_hash else None,
                         agent_id=(f.agent_id or "unknown")[:64],
                         raw_metadata=f.raw_metadata,
                         impact_score=_impact_score(f),
+                        is_sota=sota_result["is_sota"],
+                        sota_confidence=sota_result["confidence"] if sota_result["is_sota"] else None,
                     )
                     session.add(finding)
                     saved_findings += 1

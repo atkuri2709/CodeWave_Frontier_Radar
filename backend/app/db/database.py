@@ -118,6 +118,16 @@ async def init_db() -> None:
                     "pipeline_id",
                     "ALTER TABLE sources ADD COLUMN pipeline_id INTEGER REFERENCES pipeline_configs(id)",
                 ),
+                (
+                    "findings",
+                    "is_sota",
+                    "ALTER TABLE findings ADD COLUMN is_sota BOOLEAN DEFAULT 0",
+                ),
+                (
+                    "findings",
+                    "sota_confidence",
+                    "ALTER TABLE findings ADD COLUMN sota_confidence REAL",
+                ),
             ]
 
             def _run_migrations(sync_conn):

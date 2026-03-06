@@ -60,7 +60,28 @@ export interface FindingSummary {
   tags: string[];
   entities: string[];
   impact_score: number | null;
+  is_sota: boolean | null;
+  sota_confidence: number | null;
   created_at: string;
+}
+
+export interface SOTAFinding {
+  id: number;
+  title: string;
+  entities: string[];
+  source_url: string;
+  date_detected: string | null;
+  confidence: number;
+  sota_confidence: number | null;
+  category: string;
+  agent_id: string;
+  summary_short: string;
+}
+
+export interface EntityHeatmapData {
+  entities: string[];
+  topics: string[];
+  matrix: number[][];
 }
 
 export interface Digest {
@@ -214,5 +235,9 @@ export const api = {
     delete: (id: number) => fetchApi<{ ok: boolean }>(`/scheduler/${id}`, { method: 'DELETE' }),
     status: () => fetchApi<SchedulerStatus>('/scheduler/status'),
     restart: () => fetchApi<SchedulerStatus>('/scheduler/restart', { method: 'POST' }),
+  },
+  analytics: {
+    sotaWatch: (limit = 20) => fetchApi<SOTAFinding[]>(`/analytics/sota-watch?limit=${limit}`),
+    entityHeatmap: (days = 7) => fetchApi<EntityHeatmapData>(`/analytics/entity-heatmap?days=${days}`),
   },
 };

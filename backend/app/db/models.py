@@ -183,6 +183,8 @@ class Finding(Base):
     agent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     raw_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     impact_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    is_sota: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
+    sota_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(
         UTCDateTime(timezone=True), server_default=func.now()
     )
